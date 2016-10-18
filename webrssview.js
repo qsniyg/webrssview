@@ -18,6 +18,7 @@ var FeedParser = require("feedparser");
 var uuid = require("node-uuid");
 
 var feeds;
+var timers = {};
 
 
 Array.prototype.move = function(from, to) {
@@ -232,6 +233,7 @@ function send_contents(contents, ws) {
 }
 
 function reload_feed_promise(url, ws, resolve, reject) {
+    console.log("Reloading " + url);
     var url_feeds = get_feeds_by_url(url);
 
     var req = request(url);
@@ -286,7 +288,8 @@ function reload_feed_promise(url, ws, resolve, reject) {
         changed = set_feeds(url_feeds, {
             "title": meta.title,
             "description": meta.description,
-            "link": meta.link
+            "link": meta.link,
+            "last_updated": Date.now()
         }) || changed;
 
         var needs_processed = items.length;
@@ -295,17 +298,21 @@ function reload_feed_promise(url, ws, resolve, reject) {
             processed++;
 
             if (processed >= needs_processed) {
-                ws.send(wsdata);
+                if (ws)
+                    ws.send(wsdata);
 
                 if (!need_update || changed)
                     updated_feeds();
-                else
+                else if (ws)
                 {
                     ws.send(JSON.stringify({
                         name: "feeds",
                         data: feeds
                     }));
                 }
+
+                schedule_timer(url_feeds[0]);
+                set_timers(url_feeds[0]);
 
                 resolve();
             }
@@ -392,9 +399,71 @@ db_feeds.count({}).then((count) => {
         db_feeds.insert({
             name: "root",
             children: [
-            ]
+            ],
+            reload_mins: 30
         });
     }
+});
+
+
+function setting_defined(setting) {
+    return setting !== undefined && setting !== "";
+}
+
+function get_setting(feed, setting, _default) {
+    if (setting_defined(feed[setting]))
+        return feed[setting];
+
+    // TODO: implement hierarchy settings
+    if (setting_defined(feeds[0][setting]))
+        return feeds[0][setting];
+
+    return _default;
+}
+
+
+function schedule_timer(feed) {
+    var millis = Math.floor(get_setting(feed, "reload_mins", 30) * 60 * 1000);
+    timers[feed.url].scheduled = feed.last_updated + millis;
+}
+
+
+function set_timers(feed) {
+    if (feed.children) {
+        feed.children.forEach((child) => {
+            set_timers(child);
+        });
+    } else {
+        if (!feed.last_updated) {
+            reload_feed(feed.url);
+            return;
+        }
+
+        var millis = Math.floor(get_setting(feed, "reload_mins", 30) * 60 * 1000);
+        var now = Date.now();
+
+        if (timers[feed.url] !== undefined) {
+            if (timers[feed.url].scheduled - feed.last_updated != millis) {
+                clearTimeout(timers[feed.url].timer);
+                schedule_timer(feed);
+            }
+        } else {
+            timers[feed.url] = {};
+            timers[feed.url].scheduled = feed.last_updated + millis;
+        }
+
+        if (timers[feed.url].scheduled <= now) {
+            reload_feed(feed.url);
+        } else {
+            timers[feed.url].timer = setTimeout(function() {
+                reload_feed(feed.url);
+            }, millis);
+        }
+    }
+}
+
+get_feeds((feeds) => {
+    set_timers(feeds[0]);
 });
 
 function get_feed_by_hierarchy(feeds, hierarchy) {
