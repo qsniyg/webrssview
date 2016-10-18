@@ -447,6 +447,15 @@ function check_scroll() {
 }
 
 
+function set_state() {
+    feeds[0].state = $tree.tree("getState");
+    ws.send(JSON.stringify({
+        name: "set_feeds",
+        data: feeds
+    }));
+}
+
+
 function bind_evts() {
     $content.scroll(function(e) {
         check_scroll();
@@ -455,6 +464,9 @@ function bind_evts() {
     $overlay.click(function(e) {
         $overlay.addClass("hidden");
     });
+
+    $tree.bind("tree.close", set_state);
+    $tree.bind("tree.open", set_state);
 
     $tree.bind("tree.click", function(e) {
         $tree.tree("selectNode", null);
@@ -623,6 +635,10 @@ function treeme(data) {
                     return false;
             }
         });
+
+        if (feeds[0].state) {
+            $tree.tree("setState", feeds[0].state);
+        }
     }
 
     var treedata = $tree.tree("getTree");
