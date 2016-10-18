@@ -152,6 +152,7 @@ function set_unread_feeds(feed) {
 function updated_feeds() {
     sort_feeds(feeds[0]);
     fix_feeds(feeds[0]);
+    set_timers(feeds[0]);
     set_unread_feeds(feeds[0]).then(() => {
         update_feeds();
         wss.broadcast(JSON.stringify({
@@ -234,6 +235,15 @@ function send_contents(contents, ws) {
 
 function reload_feed_promise(url, ws, resolve, reject) {
     console.log("Reloading " + url);
+
+    wss.broadcast(JSON.stringify({
+        name: "reload",
+        data: {
+            url: url,
+            value: true
+        }
+    }));
+
     var url_feeds = get_feeds_by_url(url);
 
     var req = request(url);
@@ -280,11 +290,6 @@ function reload_feed_promise(url, ws, resolve, reject) {
         var processed = 0;
         var need_update = true;
 
-        var wsdata = JSON.stringify({
-            name: "reload",
-            data: url
-        });
-
         changed = set_feeds(url_feeds, {
             "title": meta.title,
             "description": meta.description,
@@ -298,8 +303,13 @@ function reload_feed_promise(url, ws, resolve, reject) {
             processed++;
 
             if (processed >= needs_processed) {
-                if (ws)
-                    ws.send(wsdata);
+                wss.broadcast(JSON.stringify({
+                    name: "reload",
+                    data: {
+                        url: url,
+                        value: false
+                    }
+                }));
 
                 if (!need_update || changed)
                     updated_feeds();
@@ -444,7 +454,6 @@ function set_timers(feed) {
 
         if (timers[feed.url] !== undefined) {
             if (timers[feed.url].scheduled - feed.last_updated != millis) {
-                clearTimeout(timers[feed.url].timer);
                 schedule_timer(feed);
             }
         } else {
@@ -455,6 +464,9 @@ function set_timers(feed) {
         if (timers[feed.url].scheduled <= now) {
             reload_feed(feed.url);
         } else {
+            if (timers[feed.url].timer !== undefined)
+                clearTimeout(timers[feed.url].timer);
+
             timers[feed.url].timer = setTimeout(function() {
                 reload_feed(feed.url);
             }, millis);

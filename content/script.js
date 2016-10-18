@@ -365,8 +365,8 @@ function set_reloading(node) {
 
 
 function reload_feed(node) {
-    set_reloading(node);
-    retree();
+    /*set_reloading(node);
+    retree();*/
 
     if (node_is_folder(node)) {
         ws.send(JSON.stringify({
@@ -847,7 +847,8 @@ $(function() {
         } else if (parsed.name === "content") {
             rendercontent(parsed.data);
         } else if (parsed.name === "reload") {
-            reloading[parsed.data] = false;
+            reloading[parsed.data.url] = parsed.data.value;
+            retree();
         }
     };
 });
