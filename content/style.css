@@ -65,6 +65,12 @@ html, body, #main {
     float: right;
 }
 
+.item-date {
+    font-style: italic;
+    font-size: 80%;
+    margin-left: 1em;
+}
+
 .split {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;

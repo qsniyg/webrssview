@@ -560,6 +560,19 @@ function isScrolledIntoView(elem)
     return null;
 }
 
+
+function format_timestamp(timestamp) {
+    var date = new Date(timestamp);
+    var iso = date.toISOString();
+    var day = iso.slice(0, 10) + " "
+    var time = iso.slice(11, 16);
+
+    if ((Date.now() - timestamp) > 86400000)
+        return day + time;
+    else
+        return time;
+}
+
 function rendercontent(content, from, to) {
     if (arguments.length < 3) {
         to = content.length;
@@ -625,6 +638,10 @@ function rendercontent(content, from, to) {
         itemtitleel.classList.add("item-title");
         itemtitleel.innerHTML = content[i].title;
 
+        var itemdateel = document.createElement("span");
+        itemdateel.classList.add("item-date");
+        itemdateel.innerHTML = format_timestamp(content[i].updated_at);
+
         var itemfeedel = document.createElement("div");
         itemfeedel.classList.add("item-feedname");
         itemfeedel.classList.add("label");
@@ -632,6 +649,7 @@ function rendercontent(content, from, to) {
         itemfeedel.innerHTML = urls[content[i].url].name;
 
         itemheadingel.appendChild(itemtitleel);
+        itemheadingel.appendChild(itemdateel);
         itemheadingel.appendChild(itemfeedel);
 
         var itembodyel = document.createElement("div");
