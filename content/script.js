@@ -284,6 +284,25 @@ function save_delete_modal() {
 }
 
 
+function show_info_modal(node) {
+    var $info_modal = $("#info_modal");
+
+    $("#info_modal_title").html(node._data.title);
+
+    if (node._data.description) {
+        $("#info_modal_desc").parent().show();
+        $("#info_modal_desc").html(node._data.description);
+    } else {
+        $("#info_modal_desc").parent().hide();
+    }
+
+    $("#info_modal_link").html(node._data.link);
+    $("#info_modal_link").attr("href", node._data.link);
+
+    $("#info_modal").modal("show");
+}
+
+
 function set_reloading(node) {
     if (node_is_folder(node)) {
         node.children.forEach(function(child) {
@@ -451,6 +470,12 @@ function bind_evts() {
             }
         } else {
             items = [
+                {
+                    name: "Info",
+                    onclick: function() {
+                        show_info_modal(e.node);
+                    }
+                },
                 {
                     name: "Reload",
                     onclick: function() {

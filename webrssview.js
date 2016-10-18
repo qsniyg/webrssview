@@ -285,7 +285,8 @@ function reload_feed_promise(url, ws, resolve, reject) {
 
         changed = set_feeds(url_feeds, {
             "title": meta.title,
-            "description": meta.description
+            "description": meta.description,
+            "link": meta.link
         }) || changed;
 
         var needs_processed = items.length;
