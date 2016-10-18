@@ -407,7 +407,7 @@ db_feeds.count({}).then((count) => {
 
 
 function setting_defined(setting) {
-    return setting !== undefined && setting !== "";
+    return setting !== undefined && setting !== null && setting !== "";
 }
 
 function get_setting(feed, setting, _default) {

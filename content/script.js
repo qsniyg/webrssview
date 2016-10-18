@@ -20,6 +20,10 @@ function node_is_folder(node) {
     return ("_data" in node) && node._data.is_folder;
 }
 
+function node_is_root(node) {
+    return !node.parent || !node.parent.parent;
+}
+
 function get_node_hierarchy(node) {
     var ret = [node.name];
 
@@ -121,6 +125,7 @@ function show_edit_modal(node) {
     var $edit_modal = $("#edit_modal");
     var $edit_modal_name = $("#edit_modal_name");
     var $edit_modal_url = $("#edit_modal_url");
+    var $edit_modal_reload = $("#edit_modal_reload");
 
     reset_modal($edit_modal);
 
@@ -134,9 +139,11 @@ function show_edit_modal(node) {
     if (node_is_folder(node)) {
         $edit_modal_name.val("");
         $edit_modal_url.val("");
+        $edit_modal_reload.val("");
     } else {
         $edit_modal_name.val(node.name);
         $edit_modal_url.val(node._data.url);
+        $edit_modal_reload.val(edit_modal_info.reload_mins);
     }
 
     $edit_modal.modal("show");
@@ -146,6 +153,7 @@ function save_edit_modal() {
     var $edit_modal = $("#edit_modal");
     var $edit_modal_name = $("#edit_modal_name");
     var $edit_modal_url = $("#edit_modal_url");
+    var $edit_modal_reload = $("#edit_modal_reload");
 
     if (!validate_modal($edit_modal)) {
         return;
@@ -153,15 +161,25 @@ function save_edit_modal() {
 
     var our_node = edit_modal_info;
 
+    var reload_val;
+
+    if ($edit_modal_reload.val() === "") {
+        reload_val = null;
+    } else {
+        reload_val = parseFloat($edit_modal_reload.val());
+    }
+
     if (edit_modal_info.children) {
         edit_modal_info.children.push({
             name: $edit_modal_name.val(),
             url: $edit_modal_url.val(),
+            reload_mins: reload_val
         });
         our_node = edit_modal_info.children[edit_modal_info.children.length - 1];
     } else {
         edit_modal_info.name = $edit_modal_name.val();
         edit_modal_info.url = $edit_modal_url.val();
+        edit_modal_info.reload_mins = reload_val;
     }
 
     ws.send(JSON.stringify({
@@ -169,23 +187,26 @@ function save_edit_modal() {
         data: feeds
     }));
 
+    our_node._data = {};
     our_node._data.url = our_node.url;
     reload_feed(our_node);
 
     $edit_modal.modal("hide");
 }
 
+
 function show_folder_modal(node, add) {
     var $folder_modal = $("#folder_modal");
     var $folder_modal_name = $("#folder_modal_name");
     var $folder_modal_title = $("#folder_modal .modal-title");
+    var $folder_modal_reload = $("#folder_modal_reload");
 
     reset_modal($folder_modal);
 
     if (add) {
         $folder_modal_title.html("Add Folder");
     } else {
-        $folder_modal_title.html("Rename Folder");
+        $folder_modal_title.html("Edit Folder");
     }
 
     if (!node_is_folder(node)) {
@@ -203,6 +224,17 @@ function show_folder_modal(node, add) {
         return;
     }
 
+    if (node_is_root(node)) {
+        $folder_modal_title.html("Settings");
+        $folder_modal_name.parent().hide();
+        $folder_modal_reload.parent().show();
+        $folder_modal_reload.val(folder_modal_info.node.reload_mins);
+    } else {
+        $folder_modal_name.parent().show();
+        $folder_modal_reload.parent().hide();
+        $folder_modal_reload.val("");
+    }
+
     if (add) {
         $folder_modal_name.val("");
     } else {
@@ -215,9 +247,18 @@ function show_folder_modal(node, add) {
 function save_folder_modal() {
     var $folder_modal = $("#folder_modal");
     var $folder_modal_name = $("#folder_modal_name");
+    var $folder_modal_reload = $("#folder_modal_reload");
 
     if (!validate_modal($folder_modal)) {
         return;
+    }
+
+    var reload_val;
+
+    if ($folder_modal_reload.val() === "") {
+        reload_val = null;
+    } else {
+        reload_val = parseFloat($folder_modal_reload.val());
     }
 
     if (folder_modal_info.add) {
@@ -227,6 +268,8 @@ function save_folder_modal() {
         });
     } else {
         folder_modal_info.node.name = $folder_modal_name.val();
+
+        folder_modal_info.node.reload_mins = reload_val;
     }
 
     ws.send(JSON.stringify({
@@ -452,7 +495,7 @@ function bind_evts() {
                     }
                 },
                 {
-                    name: "Rename",
+                    name: "Edit Folder",
                     onclick: function() {
                         show_folder_modal(e.node);
                     }
@@ -465,8 +508,9 @@ function bind_evts() {
                 }
             ];
 
-            if (!e.node.parent || !e.node.parent.parent) {
+            if (node_is_root(e.node)) {
                 items.pop();
+                items[items.length - 1].name = "Settings";
             }
         } else {
             items = [
