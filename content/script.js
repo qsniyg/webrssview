@@ -604,7 +604,10 @@ function rendercontent(content, from, to) {
             itemel.oncontextmenu = function(e) {
                 e.preventDefault();
 
-                var items = [];
+                var items = [{
+                    name: "URL",
+                    href: our_itemel.our_content.link
+                }];
 
                 if (our_itemel.our_content.unread) {
                     items.push({
@@ -636,7 +639,12 @@ function rendercontent(content, from, to) {
 
         var itemtitleel = document.createElement("div");
         itemtitleel.classList.add("item-title");
-        itemtitleel.innerHTML = content[i].title;
+
+        var itemtitleael = document.createElement("a");
+        itemtitleael.href = content[i].link;
+        itemtitleael.innerHTML = content[i].title;
+
+        itemtitleel.appendChild(itemtitleael);
 
         var itemdateel = document.createElement("span");
         itemdateel.classList.add("item-date");
