@@ -695,6 +695,8 @@ function rendercontent(content, from, to) {
         $content[0].appendChild(itemel);
     }
 
+    $content.scrollTop(0);
+
     check_scroll();
 }
 
