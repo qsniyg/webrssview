@@ -11,6 +11,13 @@ html, body, #main {
     overflow-y: auto;
 }
 
+#tree {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
 
 #overlay {
     /*background: rgba(0, 0, 0, .4);*/
