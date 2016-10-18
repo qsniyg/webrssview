@@ -78,21 +78,28 @@ function open_contextmenu(x, y, items) {
     if (items) {
         items.forEach(function(item) {
             var liel = document.createElement("li");
-            var ael = document.createElement("a");
 
-            ael.innerHTML = item.name;
-
-            if (item.href) {
-                ael.href = item.href;
+            if (item.separator) {
+                liel.setAttribute("role", "separator");
+                liel.classList.add("divider");
             } else {
-                ael.href = "javascript:void(0);";
+                var ael = document.createElement("a");
+
+                ael.innerHTML = item.name;
+
+                if (item.href) {
+                    ael.href = item.href;
+                } else {
+                    ael.href = "javascript:void(0);";
+                }
+
+                if (item.onclick) {
+                    ael.onclick = item.onclick;
+                }
+
+                liel.appendChild(ael);
             }
 
-            if (item.onclick) {
-                ael.onclick = item.onclick;
-            }
-
-            liel.appendChild(ael);
             $contextmenu[0].appendChild(liel);
         });
     }
@@ -483,6 +490,9 @@ function bind_evts() {
                     }
                 },
                 {
+                    separator: true
+                },
+                {
                     name: "Add Feed",
                     onclick: function() {
                         show_edit_modal(e.node);
@@ -495,10 +505,16 @@ function bind_evts() {
                     }
                 },
                 {
+                    separator: true
+                },
+                {
                     name: "Edit Folder",
                     onclick: function() {
                         show_folder_modal(e.node);
                     }
+                },
+                {
+                    separator: true
                 },
                 {
                     name: "Delete",
@@ -510,16 +526,11 @@ function bind_evts() {
 
             if (node_is_root(e.node)) {
                 items.pop();
+                items.pop();
                 items[items.length - 1].name = "Settings";
             }
         } else {
             items = [
-                {
-                    name: "Info",
-                    onclick: function() {
-                        show_info_modal(e.node);
-                    }
-                },
                 {
                     name: "Reload",
                     onclick: function() {
@@ -527,10 +538,22 @@ function bind_evts() {
                     }
                 },
                 {
+                    separator: true
+                },
+                {
+                    name: "Info",
+                    onclick: function() {
+                        show_info_modal(e.node);
+                    }
+                },
+                {
                     name: "Edit",
                     onclick: function() {
                         show_edit_modal(e.node);
                     }
+                },
+                {
+                    separator: true
                 },
                 {
                     name: "Delete",
