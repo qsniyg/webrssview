@@ -1,0 +1,94 @@
+html, body, #main {
+    height: 100%;
+}
+
+#content, #tree {
+    height: 100%;
+    width: 100%;
+    max-height: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+
+#overlay {
+    /*background: rgba(0, 0, 0, .4);*/
+    position: absolute;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.hidden {
+    display: none;
+}
+
+#contextmenu .dropdown-menu {
+    top: 0;
+    left: 0;
+    display: block;
+}
+
+.unread-label {
+    float: right;
+    margin-right: .5em;
+    margin-top: .2em;
+}
+
+.item {
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    margin: 10px 5px;
+}
+
+.item > div {
+    padding: 5px;
+}
+
+.item .item-heading {
+    border-bottom: 1px solid #aaa;
+    overflow:hidden;
+}
+
+.item.unread .item-title {
+    font-weight: bold;
+}
+
+.item-title {
+    float: left;
+}
+
+.item-feedname {
+    float: right;
+}
+
+.split {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.split, .gutter.gutter-horizontal {
+    height: 100%;
+    float: left;
+}
+
+.gutter {
+    background-color: #eee;
+
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.gutter.gutter-horizontal {
+    background-image: url('/content/img/grips/vertical.png');
+    cursor: ew-resize;
+}
+
+.gutter.gutter-vertical {
+    background-image: url('/content/img/grips/horizontal.png');
+    cursor: ns-resize;
+}

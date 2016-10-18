@@ -1,0 +1,13 @@
+{
+  "name": "webrssview",
+  "version": "0.1.0",
+  "description": "Web RSS Viewer",
+  "dependencies": {
+    "express": "^4.14.0",
+    "feedparser": "^1.1.5",
+    "monk": "^3.1.3",
+    "node-uuid": "^1.4.7",
+    "request": "^2.75.0",
+    "ws": "^1.1.1"
+  }
+}
