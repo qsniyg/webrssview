@@ -726,7 +726,9 @@ function format_timestamp(timestamp) {
     var day = iso.slice(0, 10) + " "
     var time = iso.slice(11, 16);
 
-    if ((Date.now() - timestamp) > 86400000)
+    var day_millis = 86400000;
+
+    if (Math.floor(Date.now() / day_millis) - Math.floor(timestamp / day_millis) > 0)
         return day + time;
     else
         return time;
