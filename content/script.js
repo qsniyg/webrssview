@@ -17,6 +17,9 @@ var reloading = {};
 var unreads = [];
 var unread_count = {};
 
+var currenttoken = null;
+var lasttokenrequest = null;
+
 function node_is_folder(node) {
     return ("_data" in node) && node._data.is_folder;
 }
@@ -205,9 +208,9 @@ function save_edit_modal() {
         data: feeds
     }));
 
-    our_node._data = {};
+    /*our_node._data = {};
     our_node._data.url = our_node.url;
-    reload_feed(our_node);
+    reload_feed(our_node);*/
 
     $edit_modal.modal("hide");
 }
@@ -400,6 +403,34 @@ function reload_feed(node) {
 }
 
 
+function get_content(node) {
+    var id;
+    var token = null;
+
+    if (node) {
+        id = node.id;
+    } else {
+        id = currentnode.id;
+        if (currenttoken)
+            token = currenttoken;
+    }
+
+    if (lasttokenrequest && token && lasttokenrequest.id === token.id)
+        return;
+
+    ws.send(JSON.stringify({
+        "name": "content",
+        "data": {
+            feed: id,
+            token: token,
+            limit: 20
+        }
+    }));
+
+    lasttokenrequest = token;
+}
+
+
 function read_item(item) {
     if (!item.our_content.unread) {
         return;
@@ -458,6 +489,10 @@ function check_scroll() {
             break;
         }
     };
+
+    if (currenttoken && (($content[0].scrollHeight - $content.height()) - $content.scrollTop()) <= 2000) {
+        get_content();
+    }
 }
 
 
@@ -520,10 +555,15 @@ function bind_evts() {
 
     $tree.bind("tree.select", function(e) {
         currentnode = e.node;
-        ws.send(JSON.stringify({
+        get_content(e.node);
+        /*ws.send(JSON.stringify({
             "name": "content",
-            "data": get_node_hierarchy(e.node)
-        }));
+            "data": {
+                feed: get_node_hierarchy(e.node),
+                token: null,
+                limit: 20
+            }
+        }));*/
     });
 
     $tree.bind("tree.contextmenu", function(e) {
@@ -740,28 +780,26 @@ function format_timestamp(timestamp) {
         return time;
 }
 
-function rendercontent(content, from, to) {
-    if (arguments.length < 3) {
-        to = content.length;
-
-        if (arguments.length < 2) {
-            from = 0;
-        }
-    }
-
-    $content.html("");
+function rendercontent(content, append) {
+    if (!append)
+        $content.html("");
 
     if (currentnode._data.error) {
-        var errorel = document.createElement("div");
-        errorel.innerHTML = currentnode._data.error;
-        errorel.classList.add("error");
+        var errorel = document.getElementById("content-error");
 
-        $content[0].appendChild(errorel);
+        if (!errorel) {
+            errorel = document.createElement("div");
+            errorel.classList.add("error");
+            errorel.setAttribute("id", "content-error");
+            $content[0].appendChild(errorel);
+        }
+
+        errorel.innerHTML = currentnode._data.error;
     }
 
     unreads = [];
 
-    for (var i = from; i < to; i++) {
+    for (var i = 0; i < content.length; i++) {
         var itemel = document.createElement("div");
         itemel.classList.add("item");
 
@@ -845,7 +883,8 @@ function rendercontent(content, from, to) {
         $content[0].appendChild(itemel);
     }
 
-    $content.scrollTop(0);
+    if (!append)
+        $content.scrollTop(0);
 
     check_scroll();
 }
@@ -932,7 +971,13 @@ $(function() {
             feeds = parsed.data;
             retree();
         } else if (parsed.name === "content") {
-            rendercontent(parsed.data);
+            if (parsed.data.oldtoken) {
+                rendercontent(parsed.data.content, true);
+            } else {
+                rendercontent(parsed.data.content, false);
+            }
+            currenttoken = parsed.data.token;
+            lasttokenrequest = null;
         } else if (parsed.name === "reload") {
             reloading[parsed.data.url] = parsed.data.value;
             retree();

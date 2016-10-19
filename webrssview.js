@@ -225,7 +225,29 @@ function set_feeds(our_feeds, options) {
     return changed;
 }
 
-function send_feed_contents(feed, ws) {
+
+function splice_content(content, token) {
+    var splice_i = -1;
+    var id = null;
+    for (var i = 0; i < content.length; i++) {
+        if (content[i].updated_at !== token.updated_at) {
+            break;
+        } else if (content[i]._id.toString() === token.id.toString()) {
+            id  = content[i]._id.toString();
+            splice_i = i;
+            break;
+        }
+    }
+
+    if (splice_i >= 0) {
+        content.splice(0, splice_i + 1);
+    }
+
+    return id;
+}
+
+
+function send_feed_contents(feed, ws, limit, token) {
     var urls = [];
 
     if (feed instanceof Array) {
@@ -236,19 +258,74 @@ function send_feed_contents(feed, ws) {
         urls = get_urls(feed);
     }
 
-    db_content.find({
+    var query = {
         url: {
             $in: urls
+        },
+
+        unread: true
+    };
+
+    var oldtoken = token || null;
+
+    if (token) {
+        query.unread = token.unread;
+
+        query.updated_at = {
+            $lte: token.updated_at
         }
-    }, {"sort": {"unread": -1, "updated_at": -1}}).then((content) => {
-        send_contents(content, ws);
+    }
+
+    db_content.find(query, {sort: {updated_at: -1}, limit: limit}).then((content) => {
+        var old_length = content.length;
+
+        var token_id = null;
+        if (token && token.id)
+            token_id = splice_content(content, token);
+
+        if (old_length >= limit) {
+            send_contents(content, oldtoken, {
+                unread: true
+            }, ws);
+            return;
+        }
+
+        if (!token || token.unread) {
+            db_content.find({
+                url: {
+                    $in: urls
+                },
+                unread: false
+            }, {sort: {updated_at: -1}, limit: limit - old_length}).then((new_content) => {
+                content.push.apply(content, new_content);
+
+                if (content.length <= 0 || content.length < limit) {
+                    send_contents(content, oldtoken, null, ws);
+                } else {
+                    send_contents(content, oldtoken, {
+                        unread: false
+                    }, ws);
+                }
+            });
+        } else {
+            send_contents(content, oldtoken, null, ws);
+        }
     });
 }
 
-function send_contents(contents, ws) {
+function send_contents(content, oldtoken, token, ws) {
+    if (token && content.length > 0) {
+        token.updated_at = content[content.length - 1].updated_at;
+        token.id = content[content.length - 1]._id;
+    }
+
     var data = JSON.stringify({
         name: "content",
-        data: contents
+        data: {
+            content: content,
+            token: token,
+            oldtoken: oldtoken
+        }
     });
 
     if (ws) {
@@ -384,14 +461,14 @@ function reload_feed_promise(url, ws, resolve, reject) {
                 "guid": content.guid
             }).then((db_items) => {
                 if (db_items.length > 0) {
-                    db_items[0].unread = true;
-
                     if (content.title === db_items[0].title &&
                         content.content === db_items[0].content)
                     {
                         endthis();
                         return;
                     }
+
+                    db_items[0].unread = true;
 
                     if (need_update) {
                         need_update = false;
@@ -554,7 +631,7 @@ function get_feed_by_id(feed, id) {
 
     if (feed.children) {
         for (var i = 0; i < feed.children.length; i++) {
-            var newid = get_feed_by_uuid(feed.children[i], id);
+            var newid = get_feed_by_id(feed.children[i], id);
             if (newid)
                 return newid;
         }
@@ -599,14 +676,18 @@ wss.on('connection', function (ws) {
             });
         } else if (parsed.name === "content") {
             get_feeds((feeds) => {
-                var feed = get_feed_by_hierarchy(feeds, parsed.data);
+                //var feed = get_feed_by_hierarchy(feeds, parsed.data.feed);
+                var feed = get_feed_by_id(feeds[0], parsed.data.feed);
 
                 if (!feed) {
-                    console.log("can't find feed: " + parsed.data.toString());
+                    console.log("can't find feed: " + parsed.data.feed.toString());
                     return;
                 }
 
-                send_feed_contents(feed, ws);
+                var token = parsed.data.token || null;
+                var limit = parsed.data.limit || 0;
+
+                send_feed_contents(feed, ws, limit, token);
             });
         } else if (parsed.name === "move") {
             get_feeds((feeds_f) => {
