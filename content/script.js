@@ -469,6 +469,20 @@ function set_state() {
 }
 
 
+function mark_as_read(node) {
+    var hierarchy = get_node_hierarchy(node);
+    ws.send(JSON.stringify({
+        name: "update_many_content",
+        data: {
+            hierarchy: hierarchy,
+            data: {
+                unread: false
+            }
+        }
+    }));
+}
+
+
 function bind_evts() {
     $content.scroll(function(e) {
         check_scroll();
@@ -524,6 +538,15 @@ function bind_evts() {
                     separator: true
                 },
                 {
+                    name: "Mark all as read",
+                    onclick: function() {
+                        mark_as_read(e.node);
+                    }
+                },
+                {
+                    separator: true
+                },
+                {
                     name: "Add Feed",
                     onclick: function() {
                         show_edit_modal(e.node);
@@ -566,6 +589,15 @@ function bind_evts() {
                     name: "Reload",
                     onclick: function() {
                         reload_feed(e.node);
+                    }
+                },
+                {
+                    separator: true
+                },
+                {
+                    name: "Mark all as read",
+                    onclick: function() {
+                        mark_as_read(e.node);
                     }
                 },
                 {

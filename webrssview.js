@@ -65,6 +65,27 @@ function update_content(data, cb) {
     });
 }
 
+function update_many_content(urls, data, cb) {
+    db_content.update({
+        url: {
+            $in: urls
+        }
+    }, {
+        $set: data
+    }, {
+        multi: true
+    }).then(() => {
+        urls.forEach((url) => {
+            var our_feeds = get_feeds_by_url(url);
+            our_feeds.forEach((feed) => {
+                feed.need_update = true;
+            });
+        });
+        if (arguments.length > 1)
+            cb(data);
+    });
+}
+
 function sort_feeds(feed) {
     if (!feed.children) {
         return;
@@ -588,6 +609,18 @@ wss.on('connection', function (ws) {
             });
         } else if (parsed.name === "set_content") {
             update_content(parsed.data, function() {
+                updated_feeds();
+            });
+        } else if (parsed.name === "update_many_content") {
+            var feed = get_feed_by_hierarchy(feeds, parsed.data.hierarchy);
+
+            if (!feed) {
+                console.log("can't find feed: " + parsed.data.toString());
+                return;
+            }
+
+            var urls = get_urls(feed);
+            update_many_content(urls, parsed.data.data, function() {
                 updated_feeds();
             });
         } else {
