@@ -249,22 +249,34 @@ function splice_content(content, token) {
 
 function send_feed_contents(feed, ws, limit, token) {
     var urls = [];
+    var regex = null;
 
-    if (feed instanceof Array) {
-        feed.forEach((this_feed) => {
-            urls.push.apply(urls, get_urls(this_feed));
-        });
-    } else {
-        urls = get_urls(feed);
+    var basequery = {};
+
+    if (feed.feed) {
+        if (feed.feed instanceof Array) {
+            feed.feed.forEach((this_feed) => {
+                urls.push.apply(urls, get_urls(this_feed));
+            });
+        } else {
+            urls = get_urls(feed.feed);
+        }
+
+        basequery.url = {
+            $in: urls
+        };
     }
 
-    var query = {
-        url: {
-            $in: urls
-        },
+    if (feed.regex) {
+        regex = feed.regex;
+        basequery.content = {
+            $regex: regex,
+            $options: "i"
+        };
+    }
 
-        unread: true
-    };
+    var query = JSON.parse(JSON.stringify(basequery));
+    query.unread = true;
 
     var oldtoken = token || null;
 
@@ -291,12 +303,13 @@ function send_feed_contents(feed, ws, limit, token) {
         }
 
         if (!token || token.unread) {
-            db_content.find({
-                url: {
-                    $in: urls
-                },
-                unread: false
-            }, {sort: {updated_at: -1}, limit: limit - old_length}).then((new_content) => {
+            query = JSON.parse(JSON.stringify(basequery));
+            query.unread = false;
+            db_content.find(query,
+                            {
+                                sort: {updated_at: -1},
+                                limit: limit - old_length
+                            }).then((new_content) => {
                 content.push.apply(content, new_content);
 
                 if (content.length <= 0 || content.length < limit) {
@@ -677,11 +690,20 @@ wss.on('connection', function (ws) {
         } else if (parsed.name === "content") {
             get_feeds((feeds) => {
                 //var feed = get_feed_by_hierarchy(feeds, parsed.data.feed);
-                var feed = get_feed_by_id(feeds[0], parsed.data.feed);
 
-                if (!feed) {
-                    console.log("can't find feed: " + parsed.data.feed.toString());
-                    return;
+                var feed = {};
+
+                if (parsed.data.feed) {
+                    feed.feed = get_feed_by_id(feeds[0], parsed.data.feed);
+
+                    if (!feed.feed) {
+                        console.log("can't find feed: " + parsed.data.feed.toString());
+                        return;
+                    }
+                }
+
+                if (parsed.data.regex) {
+                    feed.regex = parsed.data.regex;
                 }
 
                 var token = parsed.data.token || null;

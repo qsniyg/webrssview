@@ -121,6 +121,27 @@
           </div>
         </div>
       </div>
+      <div id="search_modal" class="modal" role="dialog">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title">Search</h4>
+            </div>
+            <div class="modal-body">
+              <form action="javascript:void(0);">
+                <div class="form-group">
+                  <label for="search_modal_query">Query</label>
+                  <input type="text" class="form-control" id="search_modal_query" data-required="true" autofocus />
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" onclick="save_search_modal()">Search</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="overlay" class="hidden">
       <div id="contextmenu">

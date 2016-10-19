@@ -8,6 +8,7 @@ var ws;
 var edit_modal_info;
 var folder_modal_info;
 var delete_modal_info;
+var search_modal_info;
 var feeds;
 var currentnode;
 
@@ -19,6 +20,7 @@ var unread_count = {};
 
 var currenttoken = null;
 var lasttokenrequest = null;
+var lastquery = null;
 
 function node_is_folder(node) {
     return ("_data" in node) && node._data.is_folder;
@@ -370,6 +372,33 @@ function show_info_modal(node) {
 }
 
 
+function show_search_modal(node) {
+    var $search_modal = $("#search_modal");
+    var $search_modal_query = $("#search_modal_query");
+
+    reset_modal($search_modal);
+
+    search_modal_info = node;
+
+    $search_modal_query.val("");
+
+    $search_modal.modal("show");
+    focus_modal($search_modal);
+}
+
+function save_search_modal() {
+    var $search_modal = $("#search_modal");
+    var $search_modal_query = $("#search_modal_query");
+
+    if (!validate_modal($search_modal))
+        return;
+
+    get_content(search_modal_info, $search_modal_query.val())
+
+    $search_modal.modal("hide");
+}
+
+
 function set_reloading(node) {
     if (node_is_folder(node)) {
         node.children.forEach(function(child) {
@@ -403,14 +432,19 @@ function reload_feed(node) {
 }
 
 
-function get_content(node) {
-    var id;
+function get_content(node, search) {
+    var query = {};
     var token = null;
 
+    if (search) {
+        query.regex = search;
+    }
+
     if (node) {
-        id = node.id;
+        query.feed = node.id;
     } else {
-        id = currentnode.id;
+        //query.feed = currentnode.id;
+        query = lastquery;
         if (currenttoken)
             token = currenttoken;
     }
@@ -418,16 +452,16 @@ function get_content(node) {
     if (lasttokenrequest && token && lasttokenrequest.id === token.id)
         return;
 
+    query.token = token;
+    query.limit = 20;
+
     ws.send(JSON.stringify({
         "name": "content",
-        "data": {
-            feed: id,
-            token: token,
-            limit: 20
-        }
+        "data": query
     }));
 
     lasttokenrequest = token;
+    lastquery = query;
 }
 
 
@@ -577,7 +611,10 @@ function bind_evts() {
                     }
                 },
                 {
-                    separator: true
+                    name: "Search",
+                    onclick: function() {
+                        show_search_modal(e.node);
+                    }
                 },
                 {
                     name: "Mark all as read",
@@ -634,7 +671,10 @@ function bind_evts() {
                     }
                 },
                 {
-                    separator: true
+                    name: "Search",
+                    onclick: function() {
+                        show_search_modal(e.node);
+                    }
                 },
                 {
                     name: "Mark all as read",
