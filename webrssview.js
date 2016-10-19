@@ -100,7 +100,7 @@ function fix_feeds(feed) {
         while (child.name in prev_names) {
             prev_names[oldname]++;
 
-            child.name = oldname + " (" + prev_names[name] + ")"
+            child.name = oldname + " (" + prev_names[oldname] + ")"
         }
 
         prev_names[child.name] = 0;

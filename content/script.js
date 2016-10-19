@@ -114,6 +114,10 @@ function reset_modal(modal) {
     });
 }
 
+function focus_modal(modal) {
+    modal.find("[autofocus]").focus();
+}
+
 function validate_modal(modal) {
     var ok = true;
 
@@ -154,6 +158,7 @@ function show_edit_modal(node) {
     }
 
     $edit_modal.modal("show");
+    focus_modal($edit_modal);
 }
 
 function save_edit_modal() {
@@ -257,6 +262,7 @@ function show_folder_modal(node, add) {
     }
 
     $folder_modal.modal("show");
+    focus_modal($folder_modal);
 }
 
 function save_folder_modal() {
@@ -470,6 +476,12 @@ function bind_evts() {
 
     $overlay.click(function(e) {
         $overlay.addClass("hidden");
+    });
+
+    $("input[type=text]").keydown(function(e) {
+        if (e.keyCode == 13) {
+            $(this).closest(".modal-content").find(".modal-footer .btn-primary").click();
+        }
     });
 
     $tree.bind("tree.close", set_state);
