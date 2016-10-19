@@ -177,6 +177,11 @@ function save_edit_modal() {
     }
 
     if (edit_modal_info.children) {
+        if (urls[$edit_modal_url.val()]) {
+            $edit_modal_url.parent().addClass("has-error");
+            return;
+        }
+
         edit_modal_info.children.push({
             name: $edit_modal_name.val(),
             url: $edit_modal_url.val(),
