@@ -9,6 +9,7 @@ var edit_modal_info;
 var folder_modal_info;
 var delete_modal_info;
 var feeds;
+var currentnode;
 
 var urls = {};
 var reloading = {};
@@ -25,7 +26,7 @@ function node_is_root(node) {
 }
 
 function get_node_hierarchy(node) {
-    var ret = [node.name];
+    var ret = [node._data.name];
 
     var parent = node.parent;
     while (parent && parent.name.length > 0) {
@@ -518,6 +519,7 @@ function bind_evts() {
     });
 
     $tree.bind("tree.select", function(e) {
+        currentnode = e.node;
         ws.send(JSON.stringify({
             "name": "content",
             "data": get_node_hierarchy(e.node)
@@ -643,21 +645,25 @@ function bind_evts() {
 }
 
 function treeme_update_unread(node) {
-    if (node.element && node._data.unread) {
+    if (node.element) {
         for (var i = 0; i < node.element.children.length; i++) {
             var child = node.element.children[i];
 
             if (!child.classList.contains("jqtree-element"))
                 continue;
 
-            var unreadel = document.createElement("span");
-            unreadel.classList.add("label");
-            unreadel.classList.add("label-default");
-            unreadel.classList.add("unread-label");
+            if (node._data.unread) {
+                var unreadel = document.createElement("span");
+                unreadel.classList.add("label");
+                unreadel.classList.add("label-default");
+                unreadel.classList.add("unread-label");
 
-            unreadel.innerHTML = node._data.unread;
+                unreadel.innerHTML = node._data.unread;
 
-            child.appendChild(unreadel);
+                child.appendChild(unreadel);
+            } else if (node._data.error) {
+                child.classList.add("error");
+            }
         }
     }
 
@@ -744,6 +750,14 @@ function rendercontent(content, from, to) {
     }
 
     $content.html("");
+
+    if (currentnode._data.error) {
+        var errorel = document.createElement("div");
+        errorel.innerHTML = currentnode._data.error;
+        errorel.classList.add("error");
+
+        $content[0].appendChild(errorel);
+    }
 
     unreads = [];
 
@@ -860,9 +874,13 @@ function parse_feeds(feeds, hierarchy) {
                 thisfeed.name = feeds[i].name;
             } else if (x === "id") {
                 thisfeed.id = feeds[i].id;
-            } else {
-                thisfeed._data[x] = feeds[i][x];
             }
+
+            thisfeed._data[x] = feeds[i][x];
+        }
+
+        if (thisfeed.name === "") {
+            thisfeed.name = thisfeed._data.url;
         }
 
         if (!node_is_folder(thisfeed)) {

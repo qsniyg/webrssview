@@ -109,6 +109,10 @@ function fix_feeds(feed) {
         feed.id = uuid.v4();
     }
 
+    if (feed.url) {
+        feed.url = feed.url.replace(/^\s+/, '');
+    }
+
     if (!feed.children) {
         return;
     }
@@ -278,9 +282,12 @@ function reload_feed_promise(url, ws, resolve, reject) {
     var changed = false;
     var error = false;
 
+    changed = set_feeds(url_feeds, {"error": null}) || changed;
+
     req.on('error', function(error) {
         console.log("[request] " + error.message);
-        changed = set_feeds(url_feeds, {"error": "[request] " + error.message});
+        changed = set_feeds(url_feeds, {"error": "[request] " + error.message}) || changed;
+        error = true;
     });
 
     req.on('response', function(res) {
@@ -313,6 +320,7 @@ function reload_feed_promise(url, ws, resolve, reject) {
 
     feedparser.on('end', function() {
         if (error || !meta) {
+            updated_feeds();
             reject();
             return;
         }
@@ -475,13 +483,15 @@ function set_timers(feed) {
             set_timers(child);
         });
     } else {
+        var now = Date.now();
+
         if (!feed.last_updated) {
+            feed.last_updated = now;
             reload_feed(feed.url);
             return;
         }
 
         var millis = Math.floor(get_setting(feed, "reload_mins", 30) * 60 * 1000);
-        var now = Date.now();
 
         if (timers[feed.url] !== undefined) {
             if (timers[feed.url].scheduled - feed.last_updated != millis) {
@@ -493,6 +503,7 @@ function set_timers(feed) {
         }
 
         if (timers[feed.url].scheduled <= now) {
+            timers[feed.url].scheduled = feed.last_updated + millis;
             reload_feed(feed.url);
         } else {
             if (timers[feed.url].timer !== undefined)
@@ -533,6 +544,20 @@ function get_feed_by_hierarchy(feeds, hierarchy) {
 
         if (!found)
             break;
+    }
+}
+
+function get_feed_by_id(feed, id) {
+    if (feed.id === id) {
+        return feed;
+    }
+
+    if (feed.children) {
+        for (var i = 0; i < feed.children.length; i++) {
+            var newid = get_feed_by_uuid(feed.children[i], id);
+            if (newid)
+                return newid;
+        }
     }
 }
 
