@@ -210,12 +210,6 @@ function show_folder_modal(node, add) {
 
     reset_modal($folder_modal);
 
-    if (add) {
-        $folder_modal_title.html("Add Folder");
-    } else {
-        $folder_modal_title.html("Edit Folder");
-    }
-
     if (!node_is_folder(node)) {
         // not a folder
         return;
@@ -225,21 +219,30 @@ function show_folder_modal(node, add) {
         node: get_feed_from_node(node),
         add: add
     };
+
     if (!folder_modal_info.node) {
         console.log("can't find info for folder node");
         console.log(node);
         return;
     }
 
-    if (node_is_root(node)) {
-        $folder_modal_title.html("Settings");
-        $folder_modal_name.parent().hide();
-        $folder_modal_reload.parent().show();
-        $folder_modal_reload.val(folder_modal_info.node.reload_mins);
+    $folder_modal_name.parent().show();
+    $folder_modal_reload.parent().hide();
+
+    if (add) {
+        $folder_modal_title.html("Add Folder");
     } else {
-        $folder_modal_name.parent().show();
-        $folder_modal_reload.parent().hide();
-        $folder_modal_reload.val("");
+        if (node_is_root(node)) {
+            $folder_modal_title.html("Settings");
+            $folder_modal_name.parent().hide();
+            $folder_modal_reload.parent().show();
+            $folder_modal_reload.val(folder_modal_info.node.reload_mins);
+        } else {
+            $folder_modal_title.html("Edit Folder");
+            $folder_modal_name.parent().show();
+            $folder_modal_reload.parent().hide();
+            $folder_modal_reload.val("");
+        }
     }
 
     if (add) {
@@ -275,7 +278,6 @@ function save_folder_modal() {
         });
     } else {
         folder_modal_info.node.name = $folder_modal_name.val();
-
         folder_modal_info.node.reload_mins = reload_val;
     }
 
