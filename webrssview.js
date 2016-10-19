@@ -276,6 +276,7 @@ function reload_feed_promise(url, ws, resolve, reject) {
     var meta;
 
     var changed = false;
+    var error = false;
 
     req.on('error', function(error) {
         console.log("[request] " + error.message);
@@ -295,9 +296,13 @@ function reload_feed_promise(url, ws, resolve, reject) {
     feedparser.on('error', function(error) {
         console.log("[feedparser] " + error.message);
         changed = set_feeds(url_feeds, {"error": "[feedparser] " + error.message}) || changed;
+        error = true;
     });
 
     feedparser.on('readable', function() {
+        if (error)
+            return;
+
         var item;
 
         meta = this.meta;
@@ -307,6 +312,11 @@ function reload_feed_promise(url, ws, resolve, reject) {
     });
 
     feedparser.on('end', function() {
+        if (error || !meta) {
+            reject();
+            return;
+        }
+
         var item;
         var processed = 0;
         var need_update = true;
