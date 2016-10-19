@@ -11,6 +11,10 @@ html, body, #main {
     overflow-y: auto;
 }
 
+#content img {
+    max-width: 100%;
+}
+
 #tree {
     -webkit-user-select: none;
     -moz-user-select: none;
