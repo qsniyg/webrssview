@@ -667,21 +667,6 @@ function bind_evts() {
                     separator: true
                 },
                 {
-                    name: "Mark all as read",
-                    onclick: function() {
-                        mark_as_read(e.node);
-                    }
-                },
-                {
-                    name: "Mark all as unread",
-                    onclick: function() {
-                        mark_as_read(e.node, true);
-                    }
-                },
-                {
-                    separator: true
-                },
-                {
                     name: "Add Feed",
                     onclick: function() {
                         show_edit_modal(e.node);
@@ -691,6 +676,21 @@ function bind_evts() {
                     name: "Add Folder",
                     onclick: function() {
                         show_folder_modal(e.node, true);
+                    }
+                },
+                {
+                    separator: true
+                },
+                {
+                    name: "Mark all as read",
+                    onclick: function() {
+                        mark_as_read(e.node);
+                    }
+                },
+                {
+                    name: "Mark all as unread",
+                    onclick: function() {
+                        mark_as_read(e.node, true);
                     }
                 },
                 {
