@@ -616,10 +616,16 @@ function bind_evts() {
                     }
                 },
                 {
+                    separator: true
+                },
+                {
                     name: "Search",
                     onclick: function() {
                         show_search_modal(e.node);
                     }
+                },
+                {
+                    separator: true
                 },
                 {
                     name: "Mark all as read",
@@ -676,10 +682,16 @@ function bind_evts() {
                     }
                 },
                 {
+                    separator: true
+                },
+                {
                     name: "Search",
                     onclick: function() {
                         show_search_modal(e.node);
                     }
+                },
+                {
+                    separator: true
                 },
                 {
                     name: "Mark all as read",
