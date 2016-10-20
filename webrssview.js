@@ -20,6 +20,9 @@ var uuid = require("node-uuid");
 var feeds;
 var timers = {};
 
+var reload_feed_running = false;
+var reload_feed_list = [];
+
 
 Array.prototype.move = function(from, to) {
     if (from === to) return;
@@ -577,9 +580,52 @@ function reload_feed_promise(url, ws, resolve, reject) {
     });
 }
 
-function reload_feed(url, ws) {
+function reload_feed_real(url, ws) {
     return new Promise(function(resolve, reject) {
         reload_feed_promise(url, ws, resolve, reject);
+    });
+}
+
+function reload_feed_schedule(override) {
+    if (reload_feed_running && !override) {
+        return;
+    }
+
+    reload_feed_running = true;
+
+    if (reload_feed_list.length <= 0) {
+        reload_feed_running = false;
+        return;
+    }
+
+    var our_item = reload_feed_list[0];
+
+    var common = function() {
+        reload_feed_list.splice(0, 1);
+        reload_feed_schedule(true);
+    }
+
+    reload_feed_real(our_item.url, our_item.ws).then(
+        () => {
+            common();
+            our_item.resolve();
+        },
+        () => {
+            common();
+            our_item.reject();
+        }
+    )
+}
+
+function reload_feed(url, ws) {
+    return new Promise((resolve, reject) => {
+        reload_feed_list.push({
+            url: url,
+            ws: ws,
+            resolve: resolve,
+            reject: reject
+        });
+        reload_feed_schedule();
     });
 }
 
