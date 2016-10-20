@@ -12,6 +12,7 @@ var folder_modal_info;
 var delete_modal_info;
 var search_modal_info;
 var feeds;
+var feed_freeze = false;
 var currentnode;
 
 var urls = {};
@@ -176,12 +177,8 @@ function show_edit_modal(node) {
 
     reset_modal($edit_modal);
 
-    edit_modal_info = get_feed_from_node(node);
-    if (!edit_modal_info) {
-        console.log("can't find info for node");
-        console.log(node);
-        return;
-    }
+    edit_modal_info = node;
+
 
     if (node_is_folder(node)) {
         $edit_modal_name.val("");
@@ -207,7 +204,13 @@ function save_edit_modal() {
         return;
     }
 
-    var our_node = edit_modal_info;
+    feed_freeze = true;
+    var our_node = get_feed_from_node(edit_modal_info);
+    if (!our_node) {
+        console.log("can't find info for node");
+        console.log(node);
+        return;
+    }
 
     var reload_val;
 
@@ -217,28 +220,30 @@ function save_edit_modal() {
         reload_val = parseFloat($edit_modal_reload.val());
     }
 
-    if (edit_modal_info.children) {
+    if (our_node.children) {
         if (feed_url_exists($edit_modal_url.val())) {
             $edit_modal_url.parent().addClass("has-error");
             return;
         }
 
-        edit_modal_info.children.push({
+        our_node.children.push({
             name: $edit_modal_name.val(),
             url: $edit_modal_url.val(),
             reload_mins: reload_val
         });
-        our_node = edit_modal_info.children[edit_modal_info.children.length - 1];
+        our_node = our_node.children[our_node.children.length - 1];
     } else {
-        edit_modal_info.name = $edit_modal_name.val();
-        edit_modal_info.url = $edit_modal_url.val();
-        edit_modal_info.reload_mins = reload_val;
+        our_node.name = $edit_modal_name.val();
+        our_node.url = $edit_modal_url.val();
+        our_node.reload_mins = reload_val;
     }
 
     ws.send(JSON.stringify({
         name: "set_feeds",
         data: feeds
     }));
+
+    feed_freeze = false;
 
     /*our_node._data = {};
     our_node._data.url = our_node.url;
@@ -262,15 +267,9 @@ function show_folder_modal(node, add) {
     }
 
     folder_modal_info = {
-        node: get_feed_from_node(node),
+        node: node,
         add: add
     };
-
-    if (!folder_modal_info.node) {
-        console.log("can't find info for folder node");
-        console.log(node);
-        return;
-    }
 
     $folder_modal_name.parent().show();
     $folder_modal_reload.parent().hide();
@@ -310,6 +309,14 @@ function save_folder_modal() {
         return;
     }
 
+    feed_freeze = true;
+    var our_node = get_feed_from_node(folder_modal_info.node);
+    if (!our_node) {
+        console.log("can't find info for node");
+        console.log(node);
+        return;
+    }
+
     var reload_val;
 
     if ($folder_modal_reload.val() === "") {
@@ -319,19 +326,20 @@ function save_folder_modal() {
     }
 
     if (folder_modal_info.add) {
-        folder_modal_info.node.children.push({
+        our_node.children.push({
             name: $folder_modal_name.val(),
             children: []
         });
     } else {
-        folder_modal_info.node.name = $folder_modal_name.val();
-        folder_modal_info.node.reload_mins = reload_val;
+        our_node.name = $folder_modal_name.val();
+        our_node.reload_mins = reload_val;
     }
 
     ws.send(JSON.stringify({
         name: "set_feeds",
         data: feeds
     }));
+    feed_freeze = false;
 
     $folder_modal.modal("hide");
 }
@@ -1094,6 +1102,9 @@ $(function() {
         var parsed = JSON.parse(e.data);
 
         if (parsed.name === "feeds") {
+            if (feed_freeze)
+                return;
+
             urls = {};
             feeds = parsed.data;
             retree();
