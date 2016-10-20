@@ -80,13 +80,10 @@ function get_feed_from_node(node) {
     return get_feed_by_hierarchy(get_node_hierarchy(node));
 }
 
-function open_contextmenu(x, y, items) {
-    $contextmenu.css({
-        left: x,
-        top: y
-    });
 
+function open_contextmenu(x, y, items) {
     $contextmenu.html("");
+
     if (items) {
         items.forEach(function(item) {
             var liel = document.createElement("li");
@@ -117,6 +114,21 @@ function open_contextmenu(x, y, items) {
     }
 
     $overlay.removeClass("hidden");
+
+    var height = $contextmenu.height();
+    console.log(height);
+
+    if (y + height > $(window).height()) {
+        $contextmenu.css({
+            left: x,
+            top: y - height
+        });
+    } else {
+        $contextmenu.css({
+            left: x,
+            top: y
+        });
+    }
 }
 
 function reset_modal(modal) {
