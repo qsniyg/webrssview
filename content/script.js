@@ -210,6 +210,7 @@ function save_edit_modal() {
     if (!our_node) {
         console.log("can't find info for node");
         console.log(node);
+        feed_freeze = false;
         return;
     }
 
@@ -224,6 +225,7 @@ function save_edit_modal() {
     if (our_node.children) {
         if (feed_url_exists($edit_modal_url.val())) {
             $edit_modal_url.parent().addClass("has-error");
+            feed_freeze = false;
             return;
         }
 
@@ -239,12 +241,14 @@ function save_edit_modal() {
         our_node.reload_mins = reload_val;
     }
 
-    ws.send(JSON.stringify({
+    var senddata = JSON.stringify({
         name: "set_feeds",
         data: feeds
-    }));
+    });
 
     feed_freeze = false;
+
+    ws.send(senddata);
 
     /*our_node._data = {};
     our_node._data.url = our_node.url;
@@ -315,6 +319,7 @@ function save_folder_modal() {
     if (!our_node) {
         console.log("can't find info for node");
         console.log(node);
+        feed_freeze = false;
         return;
     }
 
@@ -336,11 +341,14 @@ function save_folder_modal() {
         our_node.reload_mins = reload_val;
     }
 
-    ws.send(JSON.stringify({
+    var senddata = JSON.stringify({
         name: "set_feeds",
         data: feeds
-    }));
+    });
+
     feed_freeze = false;
+
+    ws.send(senddata);
 
     $folder_modal.modal("hide");
 }
