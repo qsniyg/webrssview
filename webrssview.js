@@ -174,6 +174,7 @@ function set_unread_feeds(feed) {
     });
 }
 
+
 function updated_feeds(do_timers) {
     sort_feeds(feeds[0]);
     fix_feeds(feeds[0]);
@@ -465,6 +466,7 @@ function reload_feed_promise(url, ws, resolve, reject) {
 
         var item;
         var processed = 0;
+        var unreads = 0;
         var need_update = true;
 
         changed = set_feeds(url_feeds, {
@@ -488,6 +490,13 @@ function reload_feed_promise(url, ws, resolve, reject) {
                         value: false
                     }
                 }));
+
+                url_feeds.forEach((feed) => {
+                    if (feed.unread !== unreads) {
+                        feed.need_update = true;
+                        need_update = false;
+                    }
+                });
 
                 if (!need_update || changed) {
                     updated_feeds(false);
@@ -525,11 +534,15 @@ function reload_feed_promise(url, ws, resolve, reject) {
                     if (content.title === db_items[0].title &&
                         content.content === db_items[0].content)
                     {
+                        if (db_items[0].unread)
+                            unreads++;
+
                         endthis();
                         return;
                     }
 
                     db_items[0].unread = true;
+                    unreads++;
 
                     if (need_update) {
                         need_update = false;
@@ -546,6 +559,8 @@ function reload_feed_promise(url, ws, resolve, reject) {
                         endthis();
                     });
                 } else {
+                    unreads++;
+
                     if (need_update) {
                         need_update = false;
                         url_feeds.forEach((feed) => {
