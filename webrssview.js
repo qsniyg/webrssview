@@ -544,6 +544,11 @@ function reload_feed_promise(url, ws, resolve, reject) {
                         return;
                     }
 
+                    if (true) {
+                        console.log("Old content: " + db_items[0].content);
+                        console.log("New content: " + content.content);
+                    }
+
                     db_items[0].unread = true;
                     unreads++;
 
@@ -842,7 +847,16 @@ wss.on('connection', function (ws) {
             get_feeds((feeds) => {
                 var urls = [];
 
-                if (parsed.data.hierarchy) {
+                if (parsed.data.id) {
+                    var feed = get_feed_by_id(feeds, parsed.data.id);
+
+                    if (!feed) {
+                        console.log("can't find feed: " + parsed.data.toString());
+                        return;
+                    }
+
+                    urls = get_urls(feed);
+                } else if (parsed.data.hierarchy) {
                     var feed = get_feed_by_hierarchy(feeds, parsed.data.hierarchy);
 
                     if (!feed) {

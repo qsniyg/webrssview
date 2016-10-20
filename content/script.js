@@ -456,7 +456,8 @@ function reload_feed(node) {
         ws.send(JSON.stringify({
             name: "reload",
             data: {
-                hierarchy: get_node_hierarchy(node)
+                //hierarchy: get_node_hierarchy(node)
+                id: node.id
             }
         }));
     } else if (node._data.url) {
