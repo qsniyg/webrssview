@@ -81,6 +81,19 @@ function get_feed_from_node(node) {
 }
 
 
+// http://stackoverflow.com/a/12484507
+function feed_url_exists(url) {
+    url = (url + "").toLowerCase();
+
+    for (var p in urls) {
+        if (urls.hasOwnProperty(p) && url == (p + "").toLowerCase()){
+            return true;
+        }
+    }
+    return false;
+}
+
+
 function open_contextmenu(x, y, items) {
     $contextmenu.html("");
 
@@ -116,7 +129,6 @@ function open_contextmenu(x, y, items) {
     $overlay.removeClass("hidden");
 
     var height = $contextmenu.height();
-    console.log(height);
 
     if (y + height > $(window).height()) {
         $contextmenu.css({
@@ -206,7 +218,7 @@ function save_edit_modal() {
     }
 
     if (edit_modal_info.children) {
-        if (urls[$edit_modal_url.val()]) {
+        if (feed_url_exists($edit_modal_url.val())) {
             $edit_modal_url.parent().addClass("has-error");
             return;
         }
