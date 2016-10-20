@@ -174,10 +174,13 @@ function set_unread_feeds(feed) {
     });
 }
 
-function updated_feeds() {
+function updated_feeds(do_timers) {
     sort_feeds(feeds[0]);
     fix_feeds(feeds[0]);
-    set_timers(feeds[0]);
+
+    if (do_timers !== false)
+        set_timers(feeds[0]);
+
     set_unread_feeds(feeds[0]).then(() => {
         update_feeds();
         wss.broadcast(JSON.stringify({
@@ -372,15 +375,51 @@ function reload_feed_promise(url, ws, resolve, reject) {
     var changed = false;
     var error = false;
 
+    var update_timers = function() {
+        var now = Date.now();
+        url_feeds.forEach((feed) => {
+            feed.last_updated = now;
+            schedule_timer(feed);
+        });
+
+        changed = true;
+    };
+
+    var do_error = function() {
+        error = true;
+        update_timers();
+
+        wss.broadcast(JSON.stringify({
+            name: "reload",
+            data: {
+                url: url,
+                value: false
+            }
+        }));
+
+        updated_feeds(false);
+
+        reject();
+    };
+
     changed = set_feeds(url_feeds, {"error": null}) || changed;
 
-    req.on('error', function(error) {
-        console.log("[request] " + error.message);
-        changed = set_feeds(url_feeds, {"error": "[request] " + error.message}) || changed;
-        error = true;
+    req.on('error', function(err) {
+        if (error) {
+            return;
+        }
+
+        console.log("[request] " + err.message);
+        changed = set_feeds(url_feeds, {"error": "[request] " + err.message}) || changed;
+
+        do_error();
     });
 
     req.on('response', function(res) {
+        if (error) {
+            return;
+        }
+
         var stream = this;
 
         if (res.statusCode !== 200) {
@@ -390,15 +429,21 @@ function reload_feed_promise(url, ws, resolve, reject) {
         stream.pipe(feedparser);
     });
 
-    feedparser.on('error', function(error) {
-        console.log("[feedparser] " + error.message);
-        changed = set_feeds(url_feeds, {"error": "[feedparser] " + error.message}) || changed;
-        error = true;
+    feedparser.on('error', function(err) {
+        if (error) {
+            return;
+        }
+
+        console.log("[feedparser] " + err.message);
+        changed = set_feeds(url_feeds, {"error": "[feedparser] " + err.message}) || changed;
+
+        do_error();
     });
 
     feedparser.on('readable', function() {
-        if (error)
+        if (error) {
             return;
+        }
 
         var item;
 
@@ -409,9 +454,12 @@ function reload_feed_promise(url, ws, resolve, reject) {
     });
 
     feedparser.on('end', function() {
-        if (error || !meta) {
-            updated_feeds();
-            reject();
+        if (error) {
+            return;
+        }
+
+        if (!meta) {
+            do_error();
             return;
         }
 
@@ -422,8 +470,7 @@ function reload_feed_promise(url, ws, resolve, reject) {
         changed = set_feeds(url_feeds, {
             "title": meta.title,
             "description": meta.description,
-            "link": meta.link,
-            "last_updated": Date.now()
+            "link": meta.link
         }) || changed;
 
         var needs_processed = items.length;
@@ -432,6 +479,8 @@ function reload_feed_promise(url, ws, resolve, reject) {
             processed++;
 
             if (processed >= needs_processed) {
+                update_timers();
+
                 wss.broadcast(JSON.stringify({
                     name: "reload",
                     data: {
@@ -440,9 +489,9 @@ function reload_feed_promise(url, ws, resolve, reject) {
                     }
                 }));
 
-                if (!need_update || changed)
-                    updated_feeds();
-                else if (ws)
+                if (!need_update || changed) {
+                    updated_feeds(false);
+                } else if (ws)
                 {
                     ws.send(JSON.stringify({
                         name: "feeds",
@@ -450,8 +499,7 @@ function reload_feed_promise(url, ws, resolve, reject) {
                     }));
                 }
 
-                schedule_timer(url_feeds[0]);
-                set_timers(url_feeds[0]);
+                update_timers();
 
                 resolve();
             }
@@ -528,9 +576,11 @@ function reload_feeds(urls, ws, i) {
     if (i >= urls.length)
         return;
 
-    reload_feed(urls[i], ws).then(function() {
+    var f = function() {
         reload_feeds(urls, ws, i + 1);
-    });
+    };
+
+    reload_feed(urls[i], ws).then(f, f);
 }
 
 db_feeds.count({}).then((count) => {
@@ -561,11 +611,29 @@ function get_setting(feed, setting, _default) {
 }
 
 
+function add_timer(feed) {
+    if (timers[feed.url].timer !== undefined) {
+        clearTimeout(timers[feed.url].timer);
+        timers[feed.url].timer = undefined;
+    }
+
+    var millis = timers[feed.url].scheduled - Date.now();
+
+    if (millis <= 1) {
+        reload_feed(feed.url);
+    } else {
+        timers[feed.url].timer = setTimeout(function() {
+            reload_feed(feed.url);
+        }, millis);
+    }
+}
+
 function schedule_timer(feed) {
     var millis = Math.floor(get_setting(feed, "reload_mins", 30) * 60 * 1000);
     timers[feed.url].scheduled = feed.last_updated + millis;
-}
 
+    add_timer(feed);
+}
 
 function set_timers(feed) {
     if (feed.children) {
@@ -576,32 +644,15 @@ function set_timers(feed) {
         var now = Date.now();
 
         if (!feed.last_updated) {
-            feed.last_updated = now;
-            reload_feed(feed.url);
-            return;
+            feed.last_updated = 0;
         }
 
-        var millis = Math.floor(get_setting(feed, "reload_mins", 30) * 60 * 1000);
-
-        if (timers[feed.url] !== undefined) {
-            if (timers[feed.url].scheduled - feed.last_updated != millis) {
-                schedule_timer(feed);
-            }
-        } else {
+        if (!timers[feed.url]) {
             timers[feed.url] = {};
-            timers[feed.url].scheduled = feed.last_updated + millis;
         }
 
-        if (timers[feed.url].scheduled <= now) {
-            timers[feed.url].scheduled = feed.last_updated + millis;
-            reload_feed(feed.url);
-        } else {
-            if (timers[feed.url].timer !== undefined)
-                clearTimeout(timers[feed.url].timer);
-
-            timers[feed.url].timer = setTimeout(function() {
-                reload_feed(feed.url);
-            }, millis);
+        if (timers[feed.url].timer === undefined) {
+            schedule_timer(feed);
         }
     }
 }
