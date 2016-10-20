@@ -13,6 +13,7 @@ var delete_modal_info;
 var search_modal_info;
 var feeds;
 var feed_freeze = false;
+var retree_freeze = false;
 var currentnode;
 
 var urls = {};
@@ -621,6 +622,14 @@ function bind_evts() {
         }
     });
 
+    $tree.bind("mousedown", function(e) {
+        retree_freeze = true;
+    });
+
+    $tree.bind("mouseup", function(e) {
+        retree_freeze = false;
+    });
+
     $tree.bind("tree.close", set_state);
     $tree.bind("tree.open", set_state);
 
@@ -838,6 +847,9 @@ function treeme_update_unread(node) {
 }
 
 function treeme(data) {
+    if (retree_freeze)
+        return true;
+
     if ($tree.html().length > 0) {
         var oldstate = $tree.tree("getState");
         $tree.tree("loadData", data);
