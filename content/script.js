@@ -1,5 +1,7 @@
 "use strict";
 
+var page_title = "webrssview";
+
 var $tree;
 var $content;
 var $overlay;
@@ -26,8 +28,11 @@ function node_is_folder(node) {
     return ("_data" in node) && node._data.is_folder;
 }
 
-function node_is_root(node) {
-    return !node.parent || !node.parent.parent;
+function node_is_root(node, strict) {
+    if (strict)
+        return node.parent && !node.parent.parent;
+    else
+        return !node.parent || !node.parent.parent;
 }
 
 function get_node_hierarchy(node) {
@@ -725,6 +730,14 @@ function bind_evts() {
 }
 
 function treeme_update_unread(node) {
+    if (node_is_root(node, true)) {
+        if (node._data.unread) {
+            document.title = "(" + node._data.unread + ") " + page_title;
+        } else {
+            document.title = page_title;
+        }
+    }
+
     if (node.element) {
         for (var i = 0; i < node.element.children.length; i++) {
             var child = node.element.children[i];
