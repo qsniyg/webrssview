@@ -87,6 +87,7 @@ html, body, #main {
 
 .item-feedname {
     float: right;
+    cursor: pointer;
 }
 
 .item-date {

@@ -996,6 +996,15 @@ function rendercontent(content, append) {
                 };
             }
 
+            itemfeedel.onclick = function(e) {
+                retree_freeze = true;
+
+                var node = $tree.tree('getNodeById', urls[our_itemel.our_content.url].id);
+                $tree.tree('selectNode', node);
+
+                retree_freeze = false;
+            };
+
             itemheadingel.oncontextmenu = function(e) {
                 e.preventDefault();
 
