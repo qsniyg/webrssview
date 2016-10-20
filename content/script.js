@@ -15,6 +15,7 @@ var feeds;
 var currentnode;
 
 var urls = {};
+var ids = {};
 var reloading = {};
 
 var unreads = [];
@@ -903,43 +904,6 @@ function rendercontent(content, append) {
 
         itemel.our_content = content[i];
 
-        (function() {
-            var our_itemel = itemel;
-
-            if (itemel.our_content.unread) {
-                itemel.onclick = function() {
-                    read_item(our_itemel);
-                };
-            }
-
-            itemel.oncontextmenu = function(e) {
-                e.preventDefault();
-
-                var items = [{
-                    name: "URL",
-                    href: our_itemel.our_content.link
-                }];
-
-                if (our_itemel.our_content.unread) {
-                    items.push({
-                        name: "Mark as read",
-                        onclick: function() {
-                            read_item(our_itemel);
-                        }
-                    });
-                } else {
-                    items.push({
-                        name: "Mark as unread",
-                        onclick: function() {
-                            unread_item(our_itemel);
-                        }
-                    });
-                }
-
-                open_contextmenu(e.pageX, e.pageY, items);
-            }
-        })();
-
         if (content[i].unread) {
             itemel.classList.add("unread");
             unreads.push(itemel);
@@ -977,6 +941,43 @@ function rendercontent(content, append) {
 
         itemel.appendChild(itemheadingel);
         itemel.appendChild(itembodyel);
+
+        (function() {
+            var our_itemel = itemel;
+
+            if (itemel.our_content.unread) {
+                itemel.onclick = function() {
+                    read_item(our_itemel);
+                };
+            }
+
+            itemheadingel.oncontextmenu = function(e) {
+                e.preventDefault();
+
+                var items = [{
+                    name: "URL",
+                    href: our_itemel.our_content.link
+                }];
+
+                if (our_itemel.our_content.unread) {
+                    items.push({
+                        name: "Mark as read",
+                        onclick: function() {
+                            read_item(our_itemel);
+                        }
+                    });
+                } else {
+                    items.push({
+                        name: "Mark as unread",
+                        onclick: function() {
+                            unread_item(our_itemel);
+                        }
+                    });
+                }
+
+                open_contextmenu(e.pageX, e.pageY, items);
+            }
+        })();
 
         $content[0].appendChild(itemel);
     }
@@ -1032,6 +1033,10 @@ function parse_feeds(feeds, hierarchy) {
                     thisfeed.name = "[R] " + thisfeed.name;
                 }
             }
+        }
+
+        if (thisfeed.id) {
+            ids[thisfeed.id] = thisfeed;
         }
 
         ret.push(thisfeed);
