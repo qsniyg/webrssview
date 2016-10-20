@@ -11,6 +11,10 @@ html, body, #main {
     overflow-y: auto;
 }
 
+#tree {
+    white-space: nowrap;
+}
+
 #content img {
     max-width: 100%;
 }
