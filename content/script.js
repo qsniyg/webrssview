@@ -510,24 +510,30 @@ function unread_item(item) {
 }
 
 
-function check_scroll() {
-    for (var i = 0; i < unreads.length; i++) {
-        var scroll_status = isScrolledIntoView(unreads[i]);
+function check_scroll(all) {
+    var our_unreads = unreads.slice();
 
-        if (scroll_status === 0) {
-            unreads[i].was_seen = true;
-            continue;
+    for (var i = 0; i < our_unreads.length; i++) {
+        var scroll_status = isScrolledIntoView(our_unreads[i]);
+
+        if (our_unreads[i].last_status !== undefined) {
+            if (scroll_status === 2 && our_unreads[i].last_status < 1) {
+                read_item(our_unreads[i]);
+            }
+
+            /*if (scroll_status === -2 && our_unreads[i].last_status > -1) {
+              read_item(our_unreads[i]);
+              }*/
         }
 
-        if (scroll_status != null && unreads[i].was_seen) {
-            read_item(unreads[i]);
-        }
+        if (scroll_status !== 1)
+            our_unreads[i].last_status = scroll_status;
 
-        if (scroll_status === -1) {
+        if (scroll_status <= -1 && !all) {
             // no point in going further
             break;
         }
-    };
+    }
 
     if (currenttoken && (($content[0].scrollHeight - $content.height()) - $content.scrollTop()) <= 2000) {
         get_content();
@@ -544,14 +550,22 @@ function set_state() {
 }
 
 
-function mark_as_read(node) {
+function mark_as_read(node, read) {
+    var unread;
+
+    if (read) {
+        unread = true;
+    } else {
+        unread = false;
+    }
+
     var hierarchy = get_node_hierarchy(node);
     ws.send(JSON.stringify({
         name: "update_many_content",
         data: {
             hierarchy: hierarchy,
             data: {
-                unread: false
+                unread: unread
             }
         }
     }));
@@ -634,6 +648,12 @@ function bind_evts() {
                     }
                 },
                 {
+                    name: "Mark all as unread",
+                    onclick: function() {
+                        mark_as_read(e.node, true);
+                    }
+                },
+                {
                     separator: true
                 },
                 {
@@ -697,6 +717,12 @@ function bind_evts() {
                     name: "Mark all as read",
                     onclick: function() {
                         mark_as_read(e.node);
+                    }
+                },
+                {
+                    name: "Mark all as unread",
+                    onclick: function() {
+                        mark_as_read(e.node, true);
                     }
                 },
                 {
@@ -816,14 +842,20 @@ function isScrolledIntoView(elem)
     var elemTop = $(elem).position().top;
     var elemBottom = elemTop + $(elem).height();
 
-    if (elemTop >= docViewBottom)
-        return -1;
-
     if (((elemBottom <= docViewBottom) && (elemTop >= docViewTop)) ||
         ((elemBottom >= docViewBottom) && (elemTop <= docViewTop)))
         return 0;
 
-    if (elemBottom <= docViewTop) {
+    if (elemTop >= docViewBottom)
+        return -2;
+
+    if (elemBottom <= docViewTop)
+        return 2;
+
+    if (elemBottom >= docViewBottom)
+        return -1;
+
+    if (elemTop <= docViewTop) {
         return 1;
     }
 
@@ -862,7 +894,8 @@ function rendercontent(content, append) {
         errorel.innerHTML = currentnode._data.error;
     }
 
-    unreads = [];
+    if (!append)
+        unreads = [];
 
     for (var i = 0; i < content.length; i++) {
         var itemel = document.createElement("div");
@@ -951,7 +984,7 @@ function rendercontent(content, append) {
     if (!append)
         $content.scrollTop(0);
 
-    check_scroll();
+    check_scroll(true);
 }
 
 function parse_feeds(feeds, hierarchy) {
