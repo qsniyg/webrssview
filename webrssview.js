@@ -550,22 +550,17 @@ function reload_feed_promise(url, ws, resolve, reject) {
                     }
 
                     if (content.title === db_items[0].title &&
-                        fuzzy_compare(content.content, db_items[0].content))
-                    {
-                        if (db_items[0].unread)
-                            unreads++;
-
-                        endthis();
-                        return;
+                        fuzzy_compare(content.content, db_items[0].content)) {
+                        content.unread = false;
+                    } else {
+                        db_items[0].unread = true;
+                        unreads++;
                     }
 
                     if (true) {
                         console.log("Old content: " + db_items[0].content);
                         console.log("New content: " + content.content);
                     }
-
-                    db_items[0].unread = true;
-                    unreads++;
 
                     if (need_update) {
                         need_update = false;
