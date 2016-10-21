@@ -550,8 +550,6 @@ function reload_feed_promise(url, ws, resolve, reject) {
                     }
 
                     if (content.title === db_items[0].title &&
-                        content.updated_at === db_items[0].updated_at &&
-                        content.created_at === db_items[0].created_at &&
                         fuzzy_compare(content.content, db_items[0].content))
                     {
                         if (db_items[0].unread)
