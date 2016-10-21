@@ -27,6 +27,8 @@ var currenttoken = null;
 var lasttokenrequest = null;
 var lastquery = null;
 
+var tzoffset = new Date().getTimezoneOffset()*60*1000;
+
 function node_is_folder(node) {
     return ("_data" in node) && node._data.is_folder;
 }
@@ -634,7 +636,7 @@ function bind_evts() {
         retree_freeze = true;
     });
 
-    $tree.bind("mouseup", function(e) {
+    $(document).bind("mouseup", function(e) {
         retree_freeze = false;
     });
 
@@ -918,7 +920,7 @@ function isScrolledIntoView(elem)
 
 
 function format_timestamp(timestamp) {
-    var date = new Date(timestamp);
+    var date = new Date(timestamp - tzoffset);
     var iso = date.toISOString();
     var day = iso.slice(0, 10) + " "
     var time = iso.slice(11, 16);
@@ -1009,6 +1011,8 @@ function rendercontent(content, append) {
 
                 var node = $tree.tree('getNodeById', urls[our_itemel.our_content.url].id);
                 $tree.tree('selectNode', node);
+
+                node.element.scrollIntoViewIfNeeded();
 
                 retree_freeze = false;
             };
