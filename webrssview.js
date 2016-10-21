@@ -555,6 +555,10 @@ function reload_feed_promise(url, ws, resolve, reject) {
                     } else {
                         db_items[0].unread = true;
                         unreads++;
+
+                        if (content.updated_at <= db_items[0].updated_at) {
+                            content.updated_at = Date.now();
+                        }
                     }
 
                     if (true) {
@@ -567,10 +571,6 @@ function reload_feed_promise(url, ws, resolve, reject) {
                         url_feeds.forEach((feed) => {
                             feed.need_update = true;
                         });
-                    }
-
-                    if (content.updated_at <= db_items[0].updated_at) {
-                        content.updated_at = Date.now();
                     }
 
                     db_content.update(db_items[0]._id, content).then(() => {
