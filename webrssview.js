@@ -868,7 +868,7 @@ wss.on('connection', function (ws) {
                     var feed = get_feed_by_id(feeds, parsed.data.id);
 
                     if (!feed) {
-                        console.log("can't find feed: " + parsed.data.toString());
+                        console.log("can't find feed: " + JSON.stringify(parsed.data));
                         return;
                     }
 
@@ -877,7 +877,7 @@ wss.on('connection', function (ws) {
                     var feed = get_feed_by_hierarchy(feeds, parsed.data.hierarchy);
 
                     if (!feed) {
-                        console.log("can't find feed: " + parsed.data.toString());
+                        console.log("can't find feed: " + JSON.stringify(parsed.data));
                         return;
                     }
 
