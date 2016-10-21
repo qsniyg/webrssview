@@ -7,7 +7,6 @@ var express = require('express');
 var app = express();
 var port = 8765;
 
-
 var db = require("monk")("localhost/webrssview");
 var db_content = db.get("content");
 var db_feeds = db.get("feeds");
@@ -16,6 +15,8 @@ var request = require("request");
 var FeedParser = require("feedparser");
 
 var uuid = require("node-uuid");
+
+var cheerio = require("cheerio");
 
 var feeds;
 var timers = {};
@@ -355,6 +356,10 @@ function send_contents(content, oldtoken, token, ws) {
     }
 }
 
+function fuzzy_compare(contents1, contents2) {
+    return cheerio.load(contents1).text() === cheerio.load(contents2).text();
+}
+
 function reload_feed_promise(url, ws, resolve, reject) {
     console.log("Reloading " + url);
 
@@ -536,6 +541,18 @@ function reload_feed_promise(url, ws, resolve, reject) {
                 if (db_items.length > 0) {
                     if (content.title === db_items[0].title &&
                         content.content === db_items[0].content)
+                    {
+                        if (db_items[0].unread)
+                            unreads++;
+
+                        endthis();
+                        return;
+                    }
+
+                    if (content.title === db_items[0].title &&
+                        content.updated_at === db_items[0].updated_at &&
+                        content.created_at === db_items[0].created_at &&
+                        fuzzy_compare(content.content, db_items[0].content))
                     {
                         if (db_items[0].unread)
                             unreads++;

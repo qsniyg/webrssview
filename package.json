@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Web RSS Viewer",
   "dependencies": {
+    "cheerio": "^0.22.0",
     "express": "^4.14.0",
     "feedparser": "^1.1.5",
     "monk": "^3.1.3",
