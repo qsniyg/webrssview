@@ -616,7 +616,7 @@ function reload_feed_schedule(override) {
     var our_item = reload_feed_list[0];
 
     var common = function() {
-        reload_feed_list.splice(0, 1);
+        reload_feed_list.splice(reload_feed_list.indexOf(our_item), 1);
         reload_feed_schedule(true);
     }
 
@@ -632,31 +632,46 @@ function reload_feed_schedule(override) {
     )
 }
 
-function reload_feed(url, ws) {
+function reload_feed(url, ws, priority) {
+    if (priority === undefined) {
+        priority = false;
+    }
+
     return new Promise((resolve, reject) => {
-        reload_feed_list.push({
+        var obj = {
             url: url,
             ws: ws,
             resolve: resolve,
             reject: reject
-        });
+        };
+
+        if (priority) {
+            reload_feed_list.unshift(obj);
+        } else {
+            reload_feed_list.push(obj);
+        }
+
         reload_feed_schedule();
     });
 }
 
-function reload_feeds(urls, ws, i) {
+function reload_feeds(urls, ws, i, priority) {
     if (!i) {
         i = 0;
+    }
+
+    if (priority === undefined) {
+        priority = false;
     }
 
     if (i >= urls.length)
         return;
 
     var f = function() {
-        reload_feeds(urls, ws, i + 1);
+        reload_feeds(urls, ws, i + 1, priority);
     };
 
-    reload_feed(urls[i], ws).then(f, f);
+    reload_feed(urls[i], ws, priority).then(f, f);
 }
 
 db_feeds.count({}).then((count) => {
@@ -879,7 +894,7 @@ wss.on('connection', function (ws) {
                     urls = [parsed.data.url];
                 }
 
-                reload_feeds(urls, ws);
+                reload_feeds(urls, ws, 0, true);
             });
         } else if (parsed.name === "set_content") {
             update_content(parsed.data, function() {
