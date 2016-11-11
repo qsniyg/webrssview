@@ -305,14 +305,16 @@ function send_feed_contents(feed, ws, limit, token) {
 
         if (old_length >= limit) {
             send_contents(content, oldtoken, {
-                unread: true
+                unread: query.unread
             }, ws);
             return;
         }
 
-        if (!token || token.unread) {
+        if (query.unread) {
             query = JSON.parse(JSON.stringify(basequery));
+
             query.unread = false;
+
             db_content.find(query,
                             {
                                 sort: {updated_at: -1},
