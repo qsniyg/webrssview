@@ -365,6 +365,8 @@ function show_delete_modal(node) {
         return; // root element
     }
 
+    feed_freeze = true;
+
     delete_modal_info = {
         node: get_feed_from_node(node),
         parent: get_feed_from_node(node.parent)
@@ -373,6 +375,9 @@ function show_delete_modal(node) {
     if (!delete_modal_info.node || !delete_modal_info.parent) {
         console.log("can't find info for node");
         console.log(node);
+
+        feed_freeze = false;
+
         return;
     }
 
@@ -397,6 +402,8 @@ function save_delete_modal() {
         name: "set_feeds",
         data: feeds
     }));
+
+    feed_freeze = false;
 
     $delete_modal.modal("hide");
 }
