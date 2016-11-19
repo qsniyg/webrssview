@@ -553,7 +553,8 @@ function reload_feed_promise(url, ws, resolve, reject) {
 
                     if (content.title === db_items[0].title &&
                         fuzzy_compare(content.content, db_items[0].content)) {
-                        content.unread = false;
+                        if (!db_items[0].unread)
+                            content.unread = false;
                     } else {
                         db_items[0].unread = true;
                         unreads++;
