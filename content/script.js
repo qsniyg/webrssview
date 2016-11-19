@@ -7,6 +7,7 @@ var $content;
 var $overlay;
 var $contextmenu;
 var ws;
+var ws_open = false;
 var edit_modal_info;
 var folder_modal_info;
 var delete_modal_info;
@@ -452,6 +453,14 @@ function save_search_modal() {
     get_content(search_modal_info, $search_modal_query.val())
 
     $search_modal.modal("hide");
+}
+
+
+function show_closed_modal() {
+    document.title = "(C) " + page_title;
+
+    var $closed_modal = $("#closed_modal");
+    $closed_modal.modal("show");
 }
 
 
@@ -1135,8 +1144,17 @@ $(function() {
     bind_evts();
 
     ws = new WebSocket("ws://" + window.location.host);
+
     ws.onopen = function(e) {
+        ws_open = true;
+
         ws.send(JSON.stringify({name: "feeds"}));
+    };
+
+    ws.onclose = function(e) {
+        ws_open = false;
+
+        show_closed_modal();
     };
 
     ws.onmessage = function(e) {
