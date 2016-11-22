@@ -191,7 +191,7 @@ function show_edit_modal(node) {
     } else {
         $edit_modal_name.val(node.name);
         $edit_modal_url.val(node._data.url);
-        $edit_modal_reload.val(edit_modal_info.reload_mins);
+        $edit_modal_reload.val(node._data.reload_mins);
     }
 
     $edit_modal.modal("show");
