@@ -23,7 +23,7 @@ var feed_parents = {};
 var timers = {};
 
 var reload_feed_running = false;
-var reload_feed_list = [];
+var reload_feed_list = {};
 
 
 Array.prototype.move = function(from, to) {
@@ -624,39 +624,52 @@ function reload_feed_real(url, ws) {
 }
 
 function reload_feed_schedule(override) {
-    if (reload_feed_running && !override) {
+    /*if (reload_feed_running && !override) {
         return;
-    }
+    }*/
 
-    reload_feed_running = true;
-
-    if (reload_feed_list.length <= 0) {
-        reload_feed_running = false;
-        return;
-    }
-
-    var our_item = reload_feed_list[0];
-
-    var common = function() {
-        reload_feed_list.splice(reload_feed_list.indexOf(our_item), 1);
-        reload_feed_schedule(true);
-    }
-
-    reload_feed_real(our_item.url, our_item.ws).then(
-        () => {
-            common();
-            our_item.resolve();
-        },
-        () => {
-            common();
-            our_item.reject();
+    for (var thread in reload_feed_list) {
+        if (reload_feed_list[thread].running && override !== true && override !== thread) {
+            continue;
         }
-    )
+
+        reload_feed_list[thread].running = true;
+
+        if (reload_feed_list[thread].data.length <= 0) {
+            reload_feed_list[thread].running = false;
+        }
+
+        var our_item = reload_feed_list[thread].data[0];
+
+        var common = function() {
+            reload_feed_list[thread].data.splice(reload_feed_list[thread].data.indexOf(our_item), 1);
+            reload_feed_schedule(thread);
+        }
+
+        reload_feed_real(our_item.url, our_item.ws).then(
+            () => {
+                common();
+                our_item.resolve();
+            },
+            () => {
+                common();
+                our_item.reject();
+            }
+        );
+    }
 }
 
-function reload_feed(url, ws, priority) {
-    if (priority === undefined) {
-        priority = false;
+function reload_feed(url, ws, options) {
+    if (!options) {
+        options = {};
+    }
+
+    if (options.priority === undefined) {
+        options.priority = false;
+    }
+
+    if (options.thread === undefined) {
+        options.thread = "default";
     }
 
     return new Promise((resolve, reject) => {
@@ -667,33 +680,40 @@ function reload_feed(url, ws, priority) {
             reject: reject
         };
 
-        if (priority) {
-            reload_feed_list.unshift(obj);
+        if (!(options.thread in reload_feed_list)) {
+            reload_feed_list[options.thread] = {
+                running: false,
+                data: []
+            };
+        }
+
+        if (options.priority) {
+            reload_feed_list[options.thread].data.unshift(obj);
         } else {
-            reload_feed_list.push(obj);
+            reload_feed_list[options.thread].data.push(obj);
         }
 
         reload_feed_schedule();
     });
 }
 
-function reload_feeds(urls, ws, i, priority) {
-    if (!i) {
-        i = 0;
+function reload_feeds(urls, ws, i, options) {
+    if (!options) {
+        options = {};
     }
 
-    if (priority === undefined) {
-        priority = false;
+    if (!i) {
+        i = 0;
     }
 
     if (i >= urls.length)
         return;
 
     var f = function() {
-        reload_feeds(urls, ws, i + 1, priority);
+        reload_feeds(urls, ws, i + 1, options);
     };
 
-    reload_feed(urls[i], ws, priority).then(f, f);
+    reload_feed(urls[i], ws, options).then(f, f);
 }
 
 db_feeds.count({}).then((count) => {
@@ -929,7 +949,9 @@ wss.on('connection', function (ws) {
                     urls = [parsed.data.url];
                 }
 
-                reload_feeds(urls, ws, 0, true);
+                reload_feeds(urls, ws, 0, {
+                    priority: true
+                });
             });
         } else if (parsed.name === "set_content") {
             update_content(parsed.data, function() {
