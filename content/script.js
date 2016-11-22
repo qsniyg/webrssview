@@ -280,21 +280,23 @@ function show_folder_modal(node, add) {
     };
 
     $folder_modal_name.parent().show();
-    $folder_modal_reload.parent().hide();
+    $folder_modal_reload.parent().show();
 
     if (add) {
         $folder_modal_title.html("Add Folder");
     } else {
+        $folder_modal_reload.val(folder_modal_info.node._data.reload_mins);
+
         if (node_is_root(node)) {
             $folder_modal_title.html("Settings");
             $folder_modal_name.parent().hide();
-            $folder_modal_reload.parent().show();
-            $folder_modal_reload.val(folder_modal_info.node.reload_mins);
+            //$folder_modal_reload.parent().show();
+            //$folder_modal_reload.val(folder_modal_info.node.reload_mins);
         } else {
             $folder_modal_title.html("Edit Folder");
             $folder_modal_name.parent().show();
-            $folder_modal_reload.parent().hide();
-            $folder_modal_reload.val("");
+            //$folder_modal_reload.parent().hide();
+            //$folder_modal_reload.val("");
         }
     }
 
