@@ -19,6 +19,7 @@ var uuid = require("node-uuid");
 var cheerio = require("cheerio");
 
 var feeds;
+var feed_parents = {};
 var timers = {};
 
 var reload_feed_running = false;
@@ -178,10 +179,28 @@ function set_unread_feeds(feed) {
     });
 }
 
+function update_parents_child(feed) {
+    if (!feed.children || feed.children.length === 0) {
+        return;
+    }
+
+    feed.children.forEach((child) => {
+        feed_parents[child.id] = feed;
+        update_parents_child(child);
+    });
+}
+
+function update_parents(feed) {
+    feed_parents = {};
+    feed_parents[feed] = null;
+    update_parents_child(feed);
+}
+
 
 function updated_feeds(do_timers) {
     sort_feeds(feeds[0]);
     fix_feeds(feeds[0]);
+    update_parents(feeds[0]);
 
     if (do_timers !== false)
         set_timers(feeds[0]);
@@ -697,7 +716,19 @@ function get_setting(feed, setting, _default) {
     if (setting_defined(feed[setting]))
         return feed[setting];
 
-    // TODO: implement hierarchy settings
+    var curr = feed;
+    var parent = null;
+    for (var i = 0; i < 1000 && curr.id in feed_parents; i++) {
+        parent = feed_parents[curr.id];
+        if (!parent)
+            break;
+
+        if (setting_defined(parent[setting]))
+            return parent[setting];
+
+        curr = parent;
+    }
+
     if (setting_defined(feeds[0][setting]))
         return feeds[0][setting];
 
@@ -752,6 +783,7 @@ function set_timers(feed) {
 }
 
 get_feeds((feeds) => {
+    update_parents(feeds[0]);
     set_timers(feeds[0]);
 });
 
