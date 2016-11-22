@@ -642,10 +642,17 @@ function reload_feed_schedule(override) {
 
         var our_item = reload_feed_list[thread].data[0];
 
-        var common = function() {
-            reload_feed_list[thread].data.splice(reload_feed_list[thread].data.indexOf(our_item), 1);
-            reload_feed_schedule(thread);
-        }
+        var common;
+        (function() {
+            var thread_copy = thread;
+            var data = reload_feed_list[thread_copy].data;
+            var our_item_copy = our_item;
+
+            common = function() {
+                data.splice(data.indexOf(our_item_copy), 1);
+                reload_feed_schedule(thread_copy);
+            }
+        })();
 
         if (our_item === undefined) {
             console.log(reload_feed_list[thread]);
