@@ -957,7 +957,8 @@ wss.on('connection', function (ws) {
                 }
 
                 reload_feeds(urls, ws, 0, {
-                    priority: true
+                    priority: true,
+                    thread: "reload"
                 });
             });
         } else if (parsed.name === "set_content") {
