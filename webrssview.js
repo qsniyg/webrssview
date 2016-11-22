@@ -637,6 +637,7 @@ function reload_feed_schedule(override) {
 
         if (reload_feed_list[thread].data.length <= 0) {
             reload_feed_list[thread].running = false;
+            continue;
         }
 
         var our_item = reload_feed_list[thread].data[0];
@@ -644,6 +645,10 @@ function reload_feed_schedule(override) {
         var common = function() {
             reload_feed_list[thread].data.splice(reload_feed_list[thread].data.indexOf(our_item), 1);
             reload_feed_schedule(thread);
+        }
+
+        if (our_item === undefined) {
+            console.log(reload_feed_list[thread]);
         }
 
         reload_feed_real(our_item.url, our_item.ws).then(
@@ -668,7 +673,7 @@ function reload_feed(url, ws, options) {
         options.priority = false;
     }
 
-    if (options.thread === undefined) {
+    if (!options.thread) {
         options.thread = "default";
     }
 
@@ -768,7 +773,9 @@ function add_timer(feed) {
         reload_feed(feed.url);
     } else {
         timers[feed.url].timer = setTimeout(function() {
-            reload_feed(feed.url);
+            reload_feed(feed.url, undefined, {
+                thread: get_setting(feed, "thread", "default")
+            });
         }, millis);
     }
 }

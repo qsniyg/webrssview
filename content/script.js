@@ -178,6 +178,7 @@ function show_edit_modal(node) {
     var $edit_modal_name = $("#edit_modal_name");
     var $edit_modal_url = $("#edit_modal_url");
     var $edit_modal_reload = $("#edit_modal_reload");
+    var $edit_modal_thread = $("#edit_modal_thread");
 
     reset_modal($edit_modal);
 
@@ -188,10 +189,12 @@ function show_edit_modal(node) {
         $edit_modal_name.val("");
         $edit_modal_url.val("");
         $edit_modal_reload.val("");
+        $edit_modal_thread.val("");
     } else {
         $edit_modal_name.val(node.name);
         $edit_modal_url.val(node._data.url);
         $edit_modal_reload.val(node._data.reload_mins);
+        $edit_modal_thread.val(node._data.thread);
     }
 
     $edit_modal.modal("show");
@@ -203,6 +206,7 @@ function save_edit_modal() {
     var $edit_modal_name = $("#edit_modal_name");
     var $edit_modal_url = $("#edit_modal_url");
     var $edit_modal_reload = $("#edit_modal_reload");
+    var $edit_modal_thread = $("#edit_modal_thread");
 
     if (!validate_modal($edit_modal)) {
         return;
@@ -235,13 +239,15 @@ function save_edit_modal() {
         our_node.children.push({
             name: $edit_modal_name.val(),
             url: $edit_modal_url.val(),
-            reload_mins: reload_val
+            reload_mins: reload_val,
+            thread: $edit_modal_thread.val()
         });
         our_node = our_node.children[our_node.children.length - 1];
     } else {
         our_node.name = $edit_modal_name.val();
         our_node.url = $edit_modal_url.val();
         our_node.reload_mins = reload_val;
+        our_node.thread = $edit_modal_thread.val();
     }
 
     var senddata = JSON.stringify({
@@ -266,6 +272,7 @@ function show_folder_modal(node, add) {
     var $folder_modal_name = $("#folder_modal_name");
     var $folder_modal_title = $("#folder_modal .modal-title");
     var $folder_modal_reload = $("#folder_modal_reload");
+    var $folder_modal_thread = $("#folder_modal_thread");
 
     reset_modal($folder_modal);
 
@@ -286,6 +293,7 @@ function show_folder_modal(node, add) {
         $folder_modal_title.html("Add Folder");
     } else {
         $folder_modal_reload.val(folder_modal_info.node._data.reload_mins);
+        $folder_modal_thread.val(folder_modal_info.node._data.thread);
 
         if (node_is_root(node)) {
             $folder_modal_title.html("Settings");
@@ -314,6 +322,7 @@ function save_folder_modal() {
     var $folder_modal = $("#folder_modal");
     var $folder_modal_name = $("#folder_modal_name");
     var $folder_modal_reload = $("#folder_modal_reload");
+    var $folder_modal_thread = $("#folder_modal_thread");
 
     if (!validate_modal($folder_modal)) {
         return;
@@ -344,6 +353,7 @@ function save_folder_modal() {
     } else {
         our_node.name = $folder_modal_name.val();
         our_node.reload_mins = reload_val;
+        our_node.thread = $folder_modal_thread.val();
     }
 
     var senddata = JSON.stringify({
