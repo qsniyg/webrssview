@@ -378,7 +378,19 @@ function send_contents(content, oldtoken, token, ws) {
 }
 
 function fuzzy_compare(contents1, contents2) {
-    return cheerio.load(contents1).text() === cheerio.load(contents2).text();
+    try {
+        var c1 = cheerio.load(contents1).text();
+    } catch (e) {
+        c1 = contents1;
+    }
+
+    try {
+        var c2 = cheerio.load(contents2).text();
+    } catch (e) {
+        c2 = contents2;
+    }
+
+    return c1 === c2;
 }
 
 function reload_feed_promise(url, ws, resolve, reject) {
@@ -394,7 +406,10 @@ function reload_feed_promise(url, ws, resolve, reject) {
 
     var url_feeds = get_feeds_by_url(url);
 
-    var req = request(url);
+    var req = request({
+        uri: url,
+        timeout: 40000
+    });
     var feedparser = new FeedParser({
         feedurl: url
     });
