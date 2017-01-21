@@ -558,48 +558,61 @@ function reload_feed_promise(url, ws, resolve, reject) {
             }
         };
 
+        var orquery = [];
         items.forEach((item) => {
-            var content = {
+            orquery.push({
                 "url": url,
-                "guid": item.guid,
-                "title": item.title,
-                "content": item.description,
-                "link": item.link,
-                "created_at": item.pubDate.getTime(),
-                "updated_at": item.date.getTime(),
-                "unread": true
-            };
+                "guid": item.guid
+            });
+        });
 
-            db_content.find({
-                "url": content.url,
-                "guid": content.guid
-            }).then((db_items) => {
-                if (db_items.length > 0) {
-                    if (content.title === db_items[0].title &&
-                        content.content === db_items[0].content)
+        db_content.find({
+            "$or": orquery
+        }).then((db_items) => {
+            items.forEach((item) => {
+                var content = {
+                    "url": url,
+                    "guid": item.guid,
+                    "title": item.title,
+                    "content": item.description,
+                    "link": item.link,
+                    "created_at": item.pubDate.getTime(),
+                    "updated_at": item.date.getTime(),
+                    "unread": true
+                };
+
+                var db_item = null;
+                for (var i = 0; i < db_items.length; i++) {
+                    if (db_items[i].guid === item.guid)
+                        db_item = db_items[i];
+                }
+
+                if (db_item) {
+                    if (content.title === db_item.title &&
+                        content.content === db_item.content)
                     {
-                        if (db_items[0].unread)
+                        if (db_item.unread)
                             unreads++;
 
                         endthis();
                         return;
                     }
 
-                    if (content.title === db_items[0].title &&
-                        fuzzy_compare(content.content, db_items[0].content)) {
-                        if (!db_items[0].unread)
+                    if (content.title === db_item.title &&
+                        fuzzy_compare(content.content, db_item.content)) {
+                        if (!db_item.unread)
                             content.unread = false;
                     } else {
-                        db_items[0].unread = true;
+                        db_item.unread = true;
                         unreads++;
 
-                        if (content.updated_at <= db_items[0].updated_at) {
+                        if (content.updated_at <= db_item.updated_at) {
                             content.updated_at = Date.now();
                         }
                     }
 
                     if (true) {
-                        console.log("Old content: " + db_items[0].content);
+                        console.log("Old content: " + db_item.content);
                         console.log("New content: " + content.content);
                     }
 
@@ -610,7 +623,7 @@ function reload_feed_promise(url, ws, resolve, reject) {
                         });
                     }
 
-                    db_content.update(db_items[0]._id, content).then(() => {
+                    db_content.update(db_item._id, content).then(() => {
                         endthis();
                     });
                 } else {
