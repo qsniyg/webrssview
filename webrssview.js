@@ -796,6 +796,19 @@ function get_setting(feed, setting, _default) {
 }
 
 
+function get_timer_time(feed, last_updated) {
+    var millis = Math.floor(get_setting(feed, "reload_mins", 30) * 60 * 1000);
+
+    if (!last_updated) {
+        last_updated = feed.last_updated;
+        if (feed.last_updated >= Date.now())
+            last_updated = Date.now();
+    }
+
+    return last_updated + millis;
+}
+
+
 function add_timer(feed) {
     if (timers[feed.url].timer !== undefined) {
         clearTimeout(timers[feed.url].timer);
@@ -805,6 +818,13 @@ function add_timer(feed) {
     var millis = timers[feed.url].scheduled - Date.now();
 
     if (millis <= 1) {
+        millis = get_timer_time(feed, Date.now()) - Date.now();
+        timers[feed.url].timer = setTimeout(function() {
+            reload_feed(feed.url, undefined, {
+                thread: get_setting(feed, "thread", "default")
+            });
+        }, millis);
+
         reload_feed(feed.url);
     } else {
         timers[feed.url].timer = setTimeout(function() {
@@ -816,8 +836,7 @@ function add_timer(feed) {
 }
 
 function schedule_timer(feed) {
-    var millis = Math.floor(get_setting(feed, "reload_mins", 30) * 60 * 1000);
-    timers[feed.url].scheduled = feed.last_updated + millis;
+    timers[feed.url].scheduled = get_timer_time(feed);
 
     add_timer(feed);
 }
@@ -832,6 +851,10 @@ function set_timers(feed) {
 
         if (!feed.last_updated) {
             feed.last_updated = 0;
+        }
+
+        if (feed.last_updated >= Date.now()) {
+            feed.last_updated = Date.now();
         }
 
         if (!timers[feed.url]) {
