@@ -408,7 +408,7 @@ function reload_feed_promise(url, ws, resolve, reject) {
 
     var req = request({
         uri: url,
-        timeout: 40000
+        timeout: 80000
     });
     var feedparser = new FeedParser({
         feedurl: url
@@ -825,7 +825,9 @@ function add_timer(feed) {
             });
         }, millis);
 
-        reload_feed(feed.url);
+        setTimeout(function() {
+            reload_feed(feed.url);
+        }, 1);
     } else {
         timers[feed.url].timer = setTimeout(function() {
             reload_feed(feed.url, undefined, {
