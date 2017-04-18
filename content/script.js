@@ -850,8 +850,9 @@ function bind_evts() {
 
 function treeme_update_unread(node) {
     if (node_is_root(node, true)) {
-        if (node._data.unread) {
-            document.title = "(" + node._data.unread + ") " + page_title;
+        var node_feed = get_feed_from_node(node);
+        if (node_feed.unread) {
+            document.title = "(" + node_feed.unread + ") " + page_title;
         } else {
             document.title = page_title;
         }
@@ -864,16 +865,24 @@ function treeme_update_unread(node) {
             if (!child.classList.contains("jqtree-element"))
                 continue;
 
-            if (node._data.unread) {
-                var unreadel = document.createElement("span");
-                unreadel.classList.add("label");
-                unreadel.classList.add("label-default");
-                unreadel.classList.add("unread-label");
+            var node_feed = get_feed_from_node(node);
 
-                unreadel.innerHTML = node._data.unread;
+            if (node_feed.unread) {
+                var unreadels = child.getElementsByClassName("unread-label");
+                var unreadel;
+                if (unreadels.length === 0) {
+                    unreadel = document.createElement("span");
+                    unreadel.classList.add("label");
+                    unreadel.classList.add("label-default");
+                    unreadel.classList.add("unread-label");
 
-                child.appendChild(unreadel);
-            } else if (node._data.error) {
+                    child.appendChild(unreadel);
+                } else {
+                    unreadel = unreadels[0];
+                }
+
+                unreadel.innerHTML = node_feed.unread;
+            } else if (node_feed.error) {
                 child.classList.add("error");
             }
         }
@@ -914,7 +923,8 @@ function check_similar_shallow(x, y) {
             return false;
         }
 
-        if (prop === "_data") {
+        if (("children" in x) &&
+            prop === "_data") {
             continue;
         }
         if (prop === "children") {
