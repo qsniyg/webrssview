@@ -884,13 +884,95 @@ function treeme_update_unread(node) {
     });
 }
 
+function check_similar_shallow(x, y) {
+    if (typeof x !== typeof y)
+        return false;
+
+    if (typeof x === "string" ||
+        typeof x === "number" ||
+        typeof x === "boolean" ||
+        typeof x === "undefined" ||
+        x === null)
+        return x === y;
+
+    if (x instanceof Array) {
+        if (x.length !== y.length)
+            return false;
+
+        for (var i = 0; i < x.length; i++) {
+            if (!check_similar_shallow(x[i], y[i]))
+                return false;
+        }
+    }
+
+    if (Object.keys(x).length !==
+        Object.keys(y).length)
+        return false;
+
+    for (var prop in x) {
+        if (!(prop in y)) {
+            return false;
+        }
+
+        if (prop === "_data") {
+            continue;
+        }
+        if (prop === "children") {
+            if (x.children.length !== y.children.length)
+                return false;
+        } else if (!check_similar_shallow(x[prop], y[prop])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function get_different(x, y) {
+    var myarray = [];
+
+    if (!check_similar_shallow(x, y)) {
+        return [y];
+    }
+
+    if ("children" in x) {
+        for (var i = 0; i < x.children.length; i++) {
+            myarray.push.apply(myarray, get_different(x.children[i], y.children[i]));
+        }
+    }
+
+    return myarray;
+}
+
+var olddata = null;
+
 function treeme(data) {
-    if (retree_freeze)
+    if (retree_freeze || !data)
         return true;
+
+    var different = get_different(olddata, data[0]);
+    olddata = data[0];
 
     if ($tree.html().length > 0) {
         var oldstate = $tree.tree("getState");
-        $tree.tree("loadData", data);
+
+        var error = false;
+        for (var i = 0; i < different.length; i++) {
+            var node = $tree.tree("getNodeById", different[i].id);
+
+            if (!node) {
+                console.log("ERROR updating node:");
+                console.log(different[i]);
+                error = true;
+                break;
+            }
+
+            $tree.tree("updateNode", node, different[i]);
+        }
+
+        if (error)
+            $tree.tree("loadData", data);
+
         $tree.tree("setState", oldstate);
     } else {
         $tree.tree({
