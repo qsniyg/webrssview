@@ -867,8 +867,9 @@ function treeme_update_unread(node) {
 
             var node_feed = get_feed_from_node(node);
 
+            var unreadels = child.getElementsByClassName("unread-label");
+
             if (node_feed.unread) {
-                var unreadels = child.getElementsByClassName("unread-label");
                 var unreadel;
                 if (unreadels.length === 0) {
                     unreadel = document.createElement("span");
@@ -882,7 +883,13 @@ function treeme_update_unread(node) {
                 }
 
                 unreadel.innerHTML = node_feed.unread;
-            } else if (node_feed.error) {
+            } else {
+                if (unreadels.length !== 0) {
+                    child.removeChild(unreadels[0]);
+                }
+            }
+
+            if (node_feed.error) {
                 child.classList.add("error");
             }
         }
@@ -980,10 +987,10 @@ function treeme(data) {
             $tree.tree("updateNode", node, different[i]);
         }
 
-        if (error)
+        if (error) {
             $tree.tree("loadData", data);
-
-        $tree.tree("setState", oldstate);
+            $tree.tree("setState", oldstate);
+        }
     } else {
         $tree.tree({
             data: data,
