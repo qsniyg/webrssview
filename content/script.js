@@ -877,12 +877,13 @@ function treeme_update_unread(node) {
                     unreadel.classList.add("label-default");
                     unreadel.classList.add("unread-label");
 
-                    child.appendChild(unreadel);
+                    child.insertBefore(unreadel, child.firstChild);
                 } else {
                     unreadel = unreadels[0];
                 }
 
-                unreadel.innerHTML = node_feed.unread;
+                if ((node_feed.unread + "") !== unreadel.innerHTML)
+                    unreadel.innerHTML = node_feed.unread;
             } else {
                 if (unreadels.length !== 0) {
                     child.removeChild(unreadels[0]);
