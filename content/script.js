@@ -955,6 +955,10 @@ function get_different(x, y) {
 
     if ("children" in x) {
         for (var i = 0; i < x.children.length; i++) {
+            if (x.children[i].id !== y.children[i].id) {
+                return [y]; // reordering
+            }
+
             myarray.push.apply(myarray, get_different(x.children[i], y.children[i]));
         }
     }
