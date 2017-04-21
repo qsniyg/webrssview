@@ -989,6 +989,11 @@ function treeme(data) {
                 break;
             }
 
+            if (node.children instanceof Array && node.children.length > 0) {
+                error = true;
+                break;
+            }
+
             $tree.tree("updateNode", node, different[i]);
         }
 
