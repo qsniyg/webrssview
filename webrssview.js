@@ -521,41 +521,50 @@ function reload_feed_promise(url, ws, resolve, reject) {
 
         var needs_processed = items.length;
 
+        var inserts = [];
+
+        var endthis2 = function() {
+            update_timers();
+
+            wss.broadcast(JSON.stringify({
+                name: "reload",
+                data: {
+                    url: url,
+                    value: false
+                }
+            }));
+
+            url_feeds.forEach((feed) => {
+                if (feed.unread !== unreads) {
+                    feed.need_update = true;
+                    need_update = false;
+                }
+            });
+
+            if (!need_update || changed) {
+                updated_feeds(false);
+            } else if (ws)
+            {
+                ws.send(JSON.stringify({
+                    name: "feeds",
+                    data: feeds
+                }));
+            }
+
+            update_timers();
+
+            resolve();
+        };
+
         var endthis = function() {
             processed++;
 
             if (processed >= needs_processed) {
-                update_timers();
-
-                wss.broadcast(JSON.stringify({
-                    name: "reload",
-                    data: {
-                        url: url,
-                        value: false
-                    }
-                }));
-
-                url_feeds.forEach((feed) => {
-                    if (feed.unread !== unreads) {
-                        feed.need_update = true;
-                        need_update = false;
-                    }
-                });
-
-                if (!need_update || changed) {
-                    updated_feeds(false);
-                } else if (ws)
-                {
-                    ws.send(JSON.stringify({
-                        name: "feeds",
-                        data: feeds
-                    }));
-                }
-
-                update_timers();
-
-                resolve();
-            }
+                if (inserts.length > 0)
+                    db_content.insert(inserts).then(endthis2);
+                else
+                    endthis2();
+            };
         };
 
         var orquery = [];
@@ -636,9 +645,12 @@ function reload_feed_promise(url, ws, resolve, reject) {
                         });
                     }
 
-                    db_content.insert(content).then(() => {
+                    inserts.push(content);
+
+                    endthis();
+                    /*db_content.insert(content).then(() => {
                         endthis();
-                    });
+                    });*/
                 }
             });
         });
