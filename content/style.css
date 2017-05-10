@@ -56,6 +56,10 @@ html, body, #main {
     display: block;
 }
 
+.special-label {
+    background-color: #e30;
+}
+
 .unread-label {
     float: right;
     margin-right: .5em;

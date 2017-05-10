@@ -1,6 +1,7 @@
 "use strict";
 
 var page_title = "webrssview";
+var special_title = "";
 
 var $tree;
 var $content;
@@ -179,6 +180,7 @@ function show_edit_modal(node) {
     var $edit_modal_url = $("#edit_modal_url");
     var $edit_modal_reload = $("#edit_modal_reload");
     var $edit_modal_thread = $("#edit_modal_thread");
+    var $edit_modal_special = $("#edit_modal_special");
 
     reset_modal($edit_modal);
 
@@ -190,11 +192,13 @@ function show_edit_modal(node) {
         $edit_modal_url.val("");
         $edit_modal_reload.val("");
         $edit_modal_thread.val("");
+        $edit_modal_special.val("");
     } else {
         $edit_modal_name.val(node.name);
         $edit_modal_url.val(node._data.url);
         $edit_modal_reload.val(node._data.reload_mins);
         $edit_modal_thread.val(node._data.thread);
+        $edit_modal_special.val(node._data.special);
     }
 
     $edit_modal.modal("show");
@@ -207,6 +211,7 @@ function save_edit_modal() {
     var $edit_modal_url = $("#edit_modal_url");
     var $edit_modal_reload = $("#edit_modal_reload");
     var $edit_modal_thread = $("#edit_modal_thread");
+    var $edit_modal_special = $("#edit_modal_special");
 
     if (!validate_modal($edit_modal)) {
         return;
@@ -240,7 +245,8 @@ function save_edit_modal() {
             name: $edit_modal_name.val(),
             url: $edit_modal_url.val(),
             reload_mins: reload_val,
-            thread: $edit_modal_thread.val()
+            thread: $edit_modal_thread.val(),
+            special: $edit_modal_special.val()
         });
         our_node = our_node.children[our_node.children.length - 1];
     } else {
@@ -248,6 +254,7 @@ function save_edit_modal() {
         our_node.url = $edit_modal_url.val();
         our_node.reload_mins = reload_val;
         our_node.thread = $edit_modal_thread.val();
+        our_node.special = $edit_modal_special.val();
     }
 
     var senddata = JSON.stringify({
@@ -848,14 +855,25 @@ function bind_evts() {
     });
 }
 
+function update_page_title() {
+    var root_node = feeds[0];
+    if (root_node.unread) {
+        document.title = "(" + special_title + root_node.unread + ") " + page_title;
+    } else {
+        document.title = page_title;
+    }
+}
+
 function treeme_update_unread(node) {
     if (node_is_root(node, true)) {
-        var node_feed = get_feed_from_node(node);
+        special_title = "";
+        update_page_title();
+        /*var node_feed = get_feed_from_node(node);
         if (node_feed.unread) {
             document.title = "(" + node_feed.unread + ") " + page_title;
         } else {
             document.title = page_title;
-        }
+        }*/
     }
 
     if (node.element) {
@@ -877,6 +895,10 @@ function treeme_update_unread(node) {
                     unreadel.classList.add("label-default");
                     unreadel.classList.add("unread-label");
 
+                    if (node_feed.special) {
+                        unreadel.classList.add("special-label");
+                    }
+
                     child.insertBefore(unreadel, child.firstChild);
                 } else {
                     unreadel = unreadels[0];
@@ -884,6 +906,11 @@ function treeme_update_unread(node) {
 
                 if ((node_feed.unread + "") !== unreadel.innerHTML)
                     unreadel.innerHTML = node_feed.unread;
+
+                if (node_feed.special && special_title.indexOf(node_feed.special) < 0) {
+                    special_title += node_feed.special;
+                    update_page_title();
+                }
             } else {
                 if (unreadels.length !== 0) {
                     child.removeChild(unreadels[0]);
