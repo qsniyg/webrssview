@@ -150,6 +150,9 @@ function set_unread_feeds(feed) {
                     resolve(items.length);
                 });
             } else {
+                if (isNaN(feed.unread))
+                    feed.unread = 0;
+
                 resolve(feed.unread);
             }
 
@@ -167,6 +170,10 @@ function set_unread_feeds(feed) {
 
         feed.children.forEach((child) => {
             set_unread_feeds(child).then((amount) => {
+                if (isNaN(amount)) {
+                    amount = 0;
+                }
+
                 size += amount;
                 processed++;
 
