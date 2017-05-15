@@ -701,6 +701,8 @@ function reload_feed_schedule(override) {
             }
         })();
 
+        delete reload_feed_list[thread].urls[our_item.url];
+
         if (our_item === undefined) {
             console.log(reload_feed_list[thread]);
         }
@@ -708,11 +710,17 @@ function reload_feed_schedule(override) {
         reload_feed_real(our_item.url, our_item.ws).then(
             () => {
                 common();
-                our_item.resolve();
+
+                our_item.resolve.forEach((resolve) => {
+                    resolve();
+                });
             },
             () => {
                 common();
-                our_item.reject();
+
+                our_item.reject.forEach((reject) => {
+                    reject();
+                });
             }
         );
     }
@@ -735,21 +743,29 @@ function reload_feed(url, ws, options) {
         var obj = {
             url: url,
             ws: ws,
-            resolve: resolve,
-            reject: reject
+            resolve: [resolve],
+            reject: [reject]
         };
 
         if (!(options.thread in reload_feed_list)) {
             reload_feed_list[options.thread] = {
                 running: false,
-                data: []
+                data: [],
+                urls: {}
             };
         }
 
-        if (options.priority) {
-            reload_feed_list[options.thread].data.unshift(obj);
+        if (reload_feed_list[options.thread].urls[url]) {
+            reload_feed_list[options.thread].urls[url].resolve.push(resolve);
+            reload_feed_list[options.thread].urls[url].reject.push(reject);
         } else {
-            reload_feed_list[options.thread].data.push(obj);
+            reload_feed_list[options.thread].urls[url] = obj;
+
+            if (options.priority) {
+                reload_feed_list[options.thread].data.unshift(obj);
+            } else {
+                reload_feed_list[options.thread].data.push(obj);
+            }
         }
 
         reload_feed_schedule();
@@ -857,6 +873,7 @@ function add_timer(feed) {
         millis = get_timer_time(feed, Date.now()) - Date.now();
         timers[feed.url].timer = setTimeout(function() {
             timers[feed.url].timer = undefined;
+            schedule_timer(feed);
             reload_feed(feed.url, undefined, {
                 thread: get_setting(feed, "thread", "default")
             });
@@ -868,6 +885,7 @@ function add_timer(feed) {
     } else {
         timers[feed.url].timer = setTimeout(function() {
             timers[feed.url].timer = undefined;
+            schedule_timer(feed);
             reload_feed(feed.url, undefined, {
                 thread: get_setting(feed, "thread", "default")
             });
