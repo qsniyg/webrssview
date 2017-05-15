@@ -836,7 +836,12 @@ function get_timer_time(feed, last_updated) {
             last_updated = Date.now();
     }
 
-    return last_updated + millis;
+    var result = last_updated + millis;
+
+    if (isNaN(result) || result < Date.now())
+        result = Date.now();
+
+    return result;
 }
 
 
@@ -851,6 +856,7 @@ function add_timer(feed) {
     if (millis <= 1) {
         millis = get_timer_time(feed, Date.now()) - Date.now();
         timers[feed.url].timer = setTimeout(function() {
+            timers[feed.url].timer = undefined;
             reload_feed(feed.url, undefined, {
                 thread: get_setting(feed, "thread", "default")
             });
@@ -861,6 +867,7 @@ function add_timer(feed) {
         }, 1);
     } else {
         timers[feed.url].timer = setTimeout(function() {
+            timers[feed.url].timer = undefined;
             reload_feed(feed.url, undefined, {
                 thread: get_setting(feed, "thread", "default")
             });
