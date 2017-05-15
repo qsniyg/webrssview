@@ -787,6 +787,9 @@ db_feeds.count({}).then((count) => {
 });
 
 
+db_content.ensureIndex({"guid": 1, "url": 1, "updated_at": 1});
+
+
 function setting_defined(setting) {
     return setting !== undefined && setting !== null && setting !== "";
 }
