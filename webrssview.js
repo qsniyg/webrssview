@@ -819,11 +819,20 @@ function get_setting(feed, setting, _default) {
 
 
 function get_timer_time(feed, last_updated) {
-    var millis = Math.floor(get_setting(feed, "reload_mins", 30) * 60 * 1000);
+    var reload_mins = get_setting(feed, "reload_mins", 30);
+    if (isNaN(reload_mins)) {
+        reload_mins = 30;
+    }
+
+    var millis = Math.floor(reload_mins * 60 * 1000);
 
     if (!last_updated) {
         last_updated = feed.last_updated;
-        if (feed.last_updated >= Date.now())
+
+        if (isNaN(last_updated))
+            last_updated = 0;
+
+        if (last_updated >= Date.now())
             last_updated = Date.now();
     }
 
@@ -866,14 +875,16 @@ function schedule_timer(feed) {
 }
 
 function set_timers(feed) {
+    var total_timers = 0;
+
     if (feed.children) {
         feed.children.forEach((child) => {
-            set_timers(child);
+            total_timers += set_timers(child);
         });
     } else {
         var now = Date.now();
 
-        if (!feed.last_updated) {
+        if (!feed.last_updated || isNaN(feed.last_updated)) {
             feed.last_updated = 0;
         }
 
@@ -887,13 +898,24 @@ function set_timers(feed) {
 
         if (timers[feed.url].timer === undefined) {
             schedule_timer(feed);
+            total_timers++;
         }
     }
+
+    return total_timers;
 }
 
 get_feeds((feeds) => {
     update_parents(feeds[0]);
-    set_timers(feeds[0]);
+    var timers = set_timers(feeds[0]);
+    setInterval(() => {
+        get_feeds((feeds) => {
+            var timers = set_timers(feeds[0]);
+            if (timers > 0)
+                console.log("Added " + timers + " timers");
+        });
+    }, 60*1000);
+    console.log("Done initialization (" + timers + " timers)");
 });
 
 function get_feed_by_hierarchy(feeds, hierarchy) {
