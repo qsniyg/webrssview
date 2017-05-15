@@ -811,7 +811,7 @@ db_feeds.count({}).then((count) => {
 });
 
 
-db_content.ensureIndex({"guid": 1, "url": 1, "updated_at": 1});
+db_content.ensureIndex({"guid": 1, "url": 1, "updated_at": 1, "unread": 1});
 
 
 function setting_defined(setting) {
