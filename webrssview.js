@@ -25,6 +25,8 @@ var timers = {};
 var reload_feed_running = false;
 var reload_feed_list = {};
 
+var reload_running = {};
+
 
 Array.prototype.move = function(from, to) {
     if (from === to) return;
@@ -403,6 +405,8 @@ function fuzzy_compare(contents1, contents2) {
 function reload_feed_promise(url, ws, resolve, reject) {
     console.log("Reloading " + url);
 
+    reload_running[url] = true;
+
     wss.broadcast(JSON.stringify({
         name: "reload",
         data: {
@@ -438,6 +442,8 @@ function reload_feed_promise(url, ws, resolve, reject) {
     };
 
     var do_error = function() {
+        delete reload_running[url];
+
         error = true;
         update_timers();
 
@@ -531,6 +537,8 @@ function reload_feed_promise(url, ws, resolve, reject) {
         var inserts = [];
 
         var endthis2 = function() {
+            delete reload_running[url];
+
             update_timers();
 
             wss.broadcast(JSON.stringify({
@@ -870,22 +878,20 @@ function add_timer(feed) {
     var millis = timers[feed.url].scheduled - Date.now();
 
     if (millis <= 1) {
-        millis = get_timer_time(feed, Date.now()) - Date.now();
+        //millis = get_timer_time(feed, Date.now()) - Date.now();
         timers[feed.url].timer = setTimeout(function() {
             timers[feed.url].timer = undefined;
-            schedule_timer(feed);
             reload_feed(feed.url, undefined, {
                 thread: get_setting(feed, "thread", "default")
             });
-        }, millis);
-
-        setTimeout(function() {
-            reload_feed(feed.url);
         }, 1);
+
+        /*setTimeout(function() {
+            reload_feed(feed.url);
+        }, 1);*/
     } else {
         timers[feed.url].timer = setTimeout(function() {
             timers[feed.url].timer = undefined;
-            schedule_timer(feed);
             reload_feed(feed.url, undefined, {
                 thread: get_setting(feed, "thread", "default")
             });
@@ -894,6 +900,11 @@ function add_timer(feed) {
 }
 
 function schedule_timer(feed) {
+    if (reload_running[feed.url]) {
+        console.log("Already running on " + feed.url + " (you shouldn't see this!)");
+        return;
+    }
+
     timers[feed.url].scheduled = get_timer_time(feed);
 
     add_timer(feed);
@@ -921,7 +932,7 @@ function set_timers(feed) {
             timers[feed.url] = {};
         }
 
-        if (timers[feed.url].timer === undefined) {
+        if (timers[feed.url].timer === undefined && !reload_running[feed.url]) {
             schedule_timer(feed);
             total_timers++;
         }
@@ -936,8 +947,8 @@ get_feeds((feeds) => {
     setInterval(() => {
         get_feeds((feeds) => {
             var timers = set_timers(feeds[0]);
-            if (timers > 0)
-                console.log("Added " + timers + " timers");
+            /*if (timers > 0)
+                console.log("Added " + timers + " timer(s)");*/
         });
     }, 60*1000);
     console.log("Done initialization (" + timers + " timers)");
