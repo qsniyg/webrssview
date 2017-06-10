@@ -845,6 +845,7 @@ function get_setting(feed, setting, _default) {
 function get_timer_time(feed, last_updated) {
     var reload_mins = get_setting(feed, "reload_mins", 30);
     if (isNaN(reload_mins)) {
+        console.log("[ERROR] NaN reload_mins for " + feed.url + " (" + reload_mins + ")");
         reload_mins = 30;
     }
 
