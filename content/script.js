@@ -1145,6 +1145,7 @@ function rendercontent(content, append) {
         var itemdateel = document.createElement("span");
         itemdateel.classList.add("item-date");
         itemdateel.innerHTML = format_timestamp(content[i].updated_at);
+        itemdateel.innerHTML += " (cr: " + format_timestamp(content[i].created_at) + ")";
 
         var itemfeedel = document.createElement("div");
         itemfeedel.classList.add("item-feedname");

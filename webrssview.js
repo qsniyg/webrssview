@@ -7,7 +7,7 @@ var express = require('express');
 var app = express();
 var port = 8765;
 
-var db = require("monk")("localhost/webrssview");
+var db = require("monk")("localhost/webrssview?auto_reconnect=true");
 var db_content = db.get("content");
 var db_feeds = db.get("feeds");
 
@@ -27,6 +27,8 @@ var reload_feed_list = {};
 
 var reload_running = {};
 
+var updating_feeds = false;
+
 
 Array.prototype.move = function(from, to) {
     if (from === to) return;
@@ -40,8 +42,8 @@ wss.broadcast = function(data) {
 };
 
 
-function get_feeds(cb) {
-    if (feeds) {
+function get_feeds(cb, force) {
+    if (feeds && !force || (force && updating_feeds)) {
         cb(feeds);
         return;
     }
@@ -207,6 +209,7 @@ function update_parents(feed) {
 
 
 function updated_feeds(do_timers) {
+    updating_feeds = true;
     sort_feeds(feeds[0]);
     fix_feeds(feeds[0]);
     update_parents(feeds[0]);
@@ -216,6 +219,7 @@ function updated_feeds(do_timers) {
 
     set_unread_feeds(feeds[0]).then(() => {
         update_feeds();
+        updating_feeds = false;
         wss.broadcast(JSON.stringify({
             name: "feeds",
             data: feeds
@@ -950,7 +954,7 @@ get_feeds((feeds) => {
             var timers = set_timers(feeds[0]);
             /*if (timers > 0)
                 console.log("Added " + timers + " timer(s)");*/
-        });
+        }, true);
     }, 60*1000);
     console.log("Done initialization (" + timers + " timers)");
 });
