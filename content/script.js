@@ -946,6 +946,21 @@ function treeme_update_unread(node, notfirst) {
 
             var unreadels = child.getElementsByClassName("unread-label");
 
+            if (node_feed.children) {
+                child.classList.add("folder");
+            }
+
+            if (reloading[node._data.url]) {
+                var titleel = child.querySelector(".jqtree-title");
+                var reloadingel = titleel.getElementsByClassName("reloading");
+                if (reloadingel.length === 0) {
+                    reloadingel = document.createElement("span");
+                    reloadingel.classList.add("reloading");
+                    reloadingel.innerHTML = "[R] ";
+                    titleel.insertBefore(reloadingel, titleel.firstChild);
+                }
+            }
+
             if (node_feed.unread) {
                 var unreadel;
                 var special = get_setting(node_feed, "special");
@@ -1364,7 +1379,7 @@ function parse_feeds(feeds, hierarchy) {
 
             if (!node_is_folder(thisfeed)) {
                 if (reloading[thisfeed._data.url]) {
-                    thisfeed.name = "[R] " + thisfeed.name;
+                    //thisfeed.name = "[R] " + thisfeed.name;
                 }
             }
         }
