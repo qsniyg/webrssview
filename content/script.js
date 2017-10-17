@@ -988,7 +988,7 @@ function treeme_update_unread(node, notfirst) {
                     unreadel.innerHTML = node_feed.unread;
 
                 if (special && special_title.indexOf(special) < 0) {
-                    special_title += node_feed.special;
+                    special_title += special;
                     //update_page_title();
                 }
             } else {
