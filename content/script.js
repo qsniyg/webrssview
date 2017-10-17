@@ -952,14 +952,16 @@ function treeme_update_unread(node, notfirst) {
 
                 var has_special_unread = true;
                 if (special && node_feed.children) {
-                    has_special_unread = false;
+                    special = null;
+                    // don't show special folders for now
+                    /*has_special_unread = false;
                     for (var x = 0; x < node_feed.children.length; x++) {
                         var child1 = node_feed.children[x];
                         if (child1.unread && get_setting(child1, "special")) {
                             has_special_unread = true;
                             break;
                         }
-                    }
+                    }*/
                 }
 
                 if (!has_special_unread)
