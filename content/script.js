@@ -1092,17 +1092,26 @@ function isScrolledIntoView(elem)
 
 
 function format_timestamp(timestamp, absolute) {
-    var date = new Date(timestamp - tzoffset);
+    var timestamp_tz = timestamp - tzoffset;
+    var date = new Date(timestamp_tz);
     var iso = date.toISOString();
-    var day = iso.slice(0, 10) + " "
+    var day = iso.slice(0, 10) + " ";
     var time = iso.slice(11, 16);
 
     var day_millis = 86400000;
+    var now = Date.now() - tzoffset;
+    var days_between = Math.floor(now / day_millis) - Math.floor(timestamp_tz / day_millis);
 
-    if (Math.floor(Date.now() / day_millis) - Math.floor(timestamp / day_millis) > 0 || absolute)
-        return day + time;
-    else
+    var extratext = "";
+    if (days_between > 0 && days_between <= 14)
+        extratext = ", " + days_between + " days ago";
+
+    if (!absolute && days_between === 0)
         return time;
+    else if (!absolute && days_between === 1)
+        return "Yesterday at " + time;
+    else
+        return day + time + extratext;
 }
 
 function rendercontent(content, append) {
@@ -1151,9 +1160,12 @@ function rendercontent(content, append) {
         var itemdateel = document.createElement("span");
         itemdateel.classList.add("item-date");
         itemdateel.innerHTML = format_timestamp(content[i].updated_at);
-        if (content[i].created_at != content[i].updated_at)
+        itemdateel.title = format_timestamp(content[i].updated_at, true);
+
+        if (content[i].created_at != content[i].updated_at) {
             itemdateel.innerHTML += " (cr: " + format_timestamp(content[i].created_at) + ")";
-        itemdateel.title = format_timestamp(content[i].updated_at, true) + " (cr: "+ format_timestamp(content[i].created_at, true) + ")";
+            itemdateel.title += " (cr: "+ format_timestamp(content[i].created_at, true) + ")";
+        }
 
         var itemfeedel = document.createElement("div");
         itemfeedel.classList.add("item-feedname");
