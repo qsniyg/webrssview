@@ -1275,7 +1275,7 @@ function rendercontent(content, append) {
 
         var itembodyel = document.createElement("div");
         itembodyel.classList.add("item-body");
-        itembodyel.innerHTML = content[i].content
+        itembodyel.innerHTML = content[i].content;
 
         itemel.appendChild(itemheadingel);
         itemel.appendChild(itembodyel);

@@ -1,3 +1,5 @@
+// -*- mode: js; js-indent-level: 4; -*-
+
 "use strict";
 
 var server = require('http').createServer();
@@ -17,6 +19,7 @@ var FeedParser = require("feedparser");
 var uuid = require("node-uuid");
 
 var cheerio = require("cheerio");
+var sanitizeHtml = require("sanitize-html");
 
 var feeds;
 var feed_parents = {};
@@ -368,10 +371,38 @@ function send_feed_contents(feed, ws, limit, token) {
     });
 }
 
+var allowedtags = [ 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol',
+                    'nl', 'li', 'b', 'i', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div',
+                    'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre',
+                    'img', 'iframe' ];
+var allowedattributes = {
+    a: [ 'href', 'target' ],
+    img: [ 'src' ],
+    iframe: [ 'src' ],
+    '*': [ 'style', 'title', 'height', 'width', 'border' ]
+};
+var transformtags = {
+    'a': (tagName, attribs) => {
+        attribs["target"] = "_blank";
+        return {
+            tagName: tagName,
+            attribs: attribs
+        };
+    }
+};
+
 function send_contents(content, oldtoken, token, ws) {
     if (token && content.length > 0) {
         token.updated_at = content[content.length - 1].updated_at;
         token.id = content[content.length - 1]._id;
+    }
+
+    for (var i = 0; i < content.length; i++) {
+        content[i].content = sanitizeHtml(content[i].content, {
+            allowedTags: allowedtags,
+            allowedAttributes: allowedattributes,
+            transformTags: transformtags
+        });
     }
 
     var data = JSON.stringify({
