@@ -423,7 +423,7 @@ function reload_feed_promise(url, ws, resolve, reject) {
 
     var req = request({
         uri: url,
-        timeout: 80000
+        timeout: 500 * 1000
     });
     var feedparser = new FeedParser({
         feedurl: url

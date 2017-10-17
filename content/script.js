@@ -1,3 +1,5 @@
+// -*- mode: js; js-indent-level: 4; -*-
+
 "use strict";
 
 var page_title = "webrssview";
@@ -866,10 +868,10 @@ function update_page_title() {
     }
 }
 
-function treeme_update_unread(node) {
+function treeme_update_unread(node, notfirst) {
     if (node_is_root(node, true)) {
         special_title = "";
-        update_page_title();
+        //update_page_title();
         /*var node_feed = get_feed_from_node(node);
         if (node_feed.unread) {
             document.title = "(" + node_feed.unread + ") " + page_title;
@@ -911,7 +913,7 @@ function treeme_update_unread(node) {
 
                 if (node_feed.special && special_title.indexOf(node_feed.special) < 0) {
                     special_title += node_feed.special;
-                    update_page_title();
+                    //update_page_title();
                 }
             } else {
                 if (unreadels.length !== 0) {
@@ -926,8 +928,12 @@ function treeme_update_unread(node) {
     }
 
     node.children.forEach(function(child) {
-        treeme_update_unread(child);
+        treeme_update_unread(child, true);
     });
+
+    if (!notfirst) {
+        update_page_title();
+    }
 }
 
 function check_similar_shallow(x, y) {
@@ -1085,7 +1091,7 @@ function isScrolledIntoView(elem)
 }
 
 
-function format_timestamp(timestamp) {
+function format_timestamp(timestamp, absolute) {
     var date = new Date(timestamp - tzoffset);
     var iso = date.toISOString();
     var day = iso.slice(0, 10) + " "
@@ -1093,7 +1099,7 @@ function format_timestamp(timestamp) {
 
     var day_millis = 86400000;
 
-    if (Math.floor(Date.now() / day_millis) - Math.floor(timestamp / day_millis) > 0)
+    if (Math.floor(Date.now() / day_millis) - Math.floor(timestamp / day_millis) > 0 || absolute)
         return day + time;
     else
         return time;
@@ -1145,7 +1151,9 @@ function rendercontent(content, append) {
         var itemdateel = document.createElement("span");
         itemdateel.classList.add("item-date");
         itemdateel.innerHTML = format_timestamp(content[i].updated_at);
-        itemdateel.innerHTML += " (cr: " + format_timestamp(content[i].created_at) + ")";
+        if (content[i].created_at != content[i].updated_at)
+            itemdateel.innerHTML += " (cr: " + format_timestamp(content[i].created_at) + ")";
+        itemdateel.title = format_timestamp(content[i].updated_at, true) + " (cr: "+ format_timestamp(content[i].created_at, true) + ")";
 
         var itemfeedel = document.createElement("div");
         itemfeedel.classList.add("item-feedname");
