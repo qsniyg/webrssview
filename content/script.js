@@ -16,6 +16,7 @@ var folder_modal_info;
 var delete_modal_info;
 var search_modal_info;
 var feeds;
+var feed_parents = {};
 var feed_freeze = false;
 var retree_freeze = false;
 var currentnode;
@@ -32,6 +33,50 @@ var lasttokenrequest = null;
 var lastquery = null;
 
 var tzoffset = new Date().getTimezoneOffset()*60*1000;
+
+function update_parents_child(feed) {
+    if (!feed.children || feed.children.length === 0) {
+        return;
+    }
+
+    feed.children.forEach(function (child) {
+        feed_parents[child.id] = feed;
+        update_parents_child(child);
+    });
+}
+
+function update_parents(feed) {
+    feed_parents = {};
+    feed_parents[feed] = null;
+    update_parents_child(feed);
+}
+
+function setting_defined(setting) {
+    return setting !== undefined && setting !== null && setting !== "";
+}
+
+function get_setting(feed, setting, _default) {
+    if (setting_defined(feed[setting]))
+        return feed[setting];
+
+    var curr = feed;
+    var parent = null;
+    for (var i = 0; i < 1000 && curr.id in feed_parents; i++) {
+        parent = feed_parents[curr.id];
+        if (!parent)
+            break;
+
+        if (setting_defined(parent[setting]))
+            return parent[setting];
+
+        curr = parent;
+    }
+
+    if (setting_defined(feeds[0][setting]))
+        return feeds[0][setting];
+
+    return _default;
+}
 
 function node_is_folder(node) {
     return ("_data" in node) && node._data.is_folder;
@@ -282,6 +327,7 @@ function show_folder_modal(node, add) {
     var $folder_modal_title = $("#folder_modal .modal-title");
     var $folder_modal_reload = $("#folder_modal_reload");
     var $folder_modal_thread = $("#folder_modal_thread");
+    var $folder_modal_special = $("#folder_modal_special");
 
     reset_modal($folder_modal);
 
@@ -303,6 +349,7 @@ function show_folder_modal(node, add) {
     } else {
         $folder_modal_reload.val(folder_modal_info.node._data.reload_mins);
         $folder_modal_thread.val(folder_modal_info.node._data.thread);
+        $folder_modal_thread.val(folder_modal_info.node._data.special);
 
         if (node_is_root(node)) {
             $folder_modal_title.html("Settings");
@@ -332,6 +379,7 @@ function save_folder_modal() {
     var $folder_modal_name = $("#folder_modal_name");
     var $folder_modal_reload = $("#folder_modal_reload");
     var $folder_modal_thread = $("#folder_modal_thread");
+    var $folder_modal_special = $("#folder_modal_special");
 
     if (!validate_modal($folder_modal)) {
         return;
@@ -363,6 +411,7 @@ function save_folder_modal() {
         our_node.name = $folder_modal_name.val();
         our_node.reload_mins = reload_val;
         our_node.thread = $folder_modal_thread.val();
+        our_node.special = $folder_modal_special.val();
     }
 
     var senddata = JSON.stringify({
@@ -893,13 +942,14 @@ function treeme_update_unread(node, notfirst) {
 
             if (node_feed.unread) {
                 var unreadel;
+                var special = get_setting(node_feed, "special");
                 if (unreadels.length === 0) {
                     unreadel = document.createElement("span");
                     unreadel.classList.add("label");
                     unreadel.classList.add("label-default");
                     unreadel.classList.add("unread-label");
 
-                    if (node_feed.special) {
+                    if (special) {
                         unreadel.classList.add("special-label");
                     }
 
@@ -911,7 +961,7 @@ function treeme_update_unread(node, notfirst) {
                 if ((node_feed.unread + "") !== unreadel.innerHTML)
                     unreadel.innerHTML = node_feed.unread;
 
-                if (node_feed.special && special_title.indexOf(node_feed.special) < 0) {
+                if (special && special_title.indexOf(special) < 0) {
                     special_title += node_feed.special;
                     //update_page_title();
                 }
@@ -1342,6 +1392,7 @@ $(function() {
 
             urls = {};
             feeds = parsed.data;
+            update_parents(feeds[0]);
             retree();
         } else if (parsed.name === "content") {
             if (parsed.data.oldtoken) {
