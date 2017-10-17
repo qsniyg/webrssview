@@ -1103,8 +1103,13 @@ function format_timestamp(timestamp, absolute) {
     var days_between = Math.floor(now / day_millis) - Math.floor(timestamp_tz / day_millis);
 
     var extratext = "";
-    if (days_between > 0 && days_between <= 14)
-        extratext = ", " + days_between + " days ago";
+    if (days_between > 0 && days_between <= 14) {
+        if (days_between === 1) {
+            extratext = ", " + days_between + " day ago";
+        } else {
+            extratext = ", " + days_between + " days ago";
+        }
+    }
 
     if (!absolute && days_between === 0)
         return time;
