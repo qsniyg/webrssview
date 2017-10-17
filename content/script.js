@@ -950,14 +950,18 @@ function treeme_update_unread(node, notfirst) {
                 child.classList.add("folder");
             }
 
+            var titleel = child.querySelector(".jqtree-title");
+            var reloadingel = titleel.getElementsByClassName("reloading");
             if (reloading[node._data.url]) {
-                var titleel = child.querySelector(".jqtree-title");
-                var reloadingel = titleel.getElementsByClassName("reloading");
                 if (reloadingel.length === 0) {
                     reloadingel = document.createElement("span");
                     reloadingel.classList.add("reloading");
                     reloadingel.innerHTML = "[R] ";
                     titleel.insertBefore(reloadingel, titleel.firstChild);
+                }
+            } else {
+                if (reloadingel.length !== 0) {
+                    titleel.removeChild(reloadingel[0]);
                 }
             }
 
