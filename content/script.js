@@ -55,9 +55,15 @@ function setting_defined(setting) {
     return setting !== undefined && setting !== null && setting !== "";
 }
 
+function parse_setting(setting, value) {
+    if (setting === "special" && value === "null")
+        return null;
+    return value;
+}
+
 function get_setting(feed, setting, _default) {
     if (setting_defined(feed[setting]))
-        return feed[setting];
+        return parse_setting(setting, feed[setting]);
 
     var curr = feed;
     var parent = null;
@@ -67,15 +73,15 @@ function get_setting(feed, setting, _default) {
             break;
 
         if (setting_defined(parent[setting]))
-            return parent[setting];
+            return parse_setting(setting, parent[setting]);
 
         curr = parent;
     }
 
     if (setting_defined(feeds[0][setting]))
-        return feeds[0][setting];
+        return parse_setting(setting, feeds[0][setting]);
 
-    return _default;
+    return parse_setting(setting, _default);
 }
 
 function node_is_folder(node) {
@@ -349,7 +355,7 @@ function show_folder_modal(node, add) {
     } else {
         $folder_modal_reload.val(folder_modal_info.node._data.reload_mins);
         $folder_modal_thread.val(folder_modal_info.node._data.thread);
-        $folder_modal_thread.val(folder_modal_info.node._data.special);
+        $folder_modal_special.val(folder_modal_info.node._data.special);
 
         if (node_is_root(node)) {
             $folder_modal_title.html("Settings");
@@ -943,19 +949,37 @@ function treeme_update_unread(node, notfirst) {
             if (node_feed.unread) {
                 var unreadel;
                 var special = get_setting(node_feed, "special");
+
+                var has_special_unread = true;
+                if (special && node_feed.children) {
+                    has_special_unread = false;
+                    for (var x = 0; x < node_feed.children.length; x++) {
+                        var child1 = node_feed.children[x];
+                        if (child1.unread && get_setting(child1, "special")) {
+                            has_special_unread = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!has_special_unread)
+                    special = null;
+
                 if (unreadels.length === 0) {
                     unreadel = document.createElement("span");
                     unreadel.classList.add("label");
                     unreadel.classList.add("label-default");
                     unreadel.classList.add("unread-label");
 
-                    if (special) {
-                        unreadel.classList.add("special-label");
-                    }
-
                     child.insertBefore(unreadel, child.firstChild);
                 } else {
                     unreadel = unreadels[0];
+                }
+
+                if (special) {
+                    unreadel.classList.add("special-label");
+                } else {
+                    unreadel.classList.remove("special-label");
                 }
 
                 if ((node_feed.unread + "") !== unreadel.innerHTML)
