@@ -388,6 +388,15 @@ var transformtags = {
             tagName: tagName,
             attribs: attribs
         };
+    },
+    'iframe': (tagName, attribs) => {
+        return {
+            tagName: "a",
+            attribs: {
+                'href': attribs["src"]
+            },
+            text: "(iframe to " + attribs["src"] + ")"
+        };
     }
 };
 
