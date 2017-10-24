@@ -575,7 +575,8 @@ function save_search_modal() {
     if (!validate_modal($search_modal))
         return;
 
-    get_content(search_modal_info, $search_modal_query.val())
+    resettoken();
+    get_content(search_modal_info, $search_modal_query.val());
 
     $search_modal.modal("hide");
 }
@@ -620,6 +621,12 @@ function reload_feed(node) {
             }
         }));
     }
+}
+
+
+function resettoken() {
+    lasttokenrequest = null;
+    currenttoken = null;
 }
 
 
@@ -802,6 +809,8 @@ function bind_evts() {
 
     $tree.bind("tree.select", function(e) {
         currentnode = e.node;
+
+        resettoken();
         get_content(e.node);
         /*ws.send(JSON.stringify({
             "name": "content",
