@@ -164,16 +164,39 @@ function get_notify_permission() {
 }
 
 
-function do_notify(x) {
+function do_notify(x, options) {
+    function real(x, options) {
+        var secondarg = {};
+        if (options) {
+            if (options.body) {
+                var div = document.createElement("div");
+                div.innerHTML = options.body;
+                secondarg.body = div.innerText;
+            }
+        }
+
+        var obj = new Notification(x, secondarg);
+        if (options) {
+            if (options.click) {
+                obj.onclick = function(event) {
+                    //event.preventDefault();
+                    options.click(event, options._data);
+                    window.focus();
+                    obj.close();
+                };
+            }
+        }
+    }
+
     console.log("Notification: " + x);
     if (!("Notification" in window)) {
         return;
     } else if (Notification.permission === "granted") {
-        new Notification(x);
+        real(x, options);
     } else if (Notification.permission !== "denied") {
         Notification.requestPermission(function (permission) {
             if (permission === "granted") {
-                new Notification(x);
+                real(x, options);
             }
         });
     }
@@ -186,16 +209,25 @@ function notify_new_content(data) {
         return;
     }
 
-    var feed = urls[data.url];
+    var feed = urls[data.url]._data;
 
     /*console.log(feed);
     console.log(data.content);*/
-    if (get_setting(feed, "special")) {
+    if (get_setting(feed, "special") || true) {
         //console.log("special");
-        if (data.content.length === 1)
-            do_notify("[" + feed.name + "] " + data.content[0].title);
-        else
-            do_notify("[" + feed.name + "] " + data.content.length + " new items");
+        var base = feed.name + ": ";
+        var options = {
+            click: function(event, data) {
+                select_node_by_url(data.url);
+            },
+            _data: feed
+        };
+        if (data.content.length === 1) {
+            options.body = data.content[0].content;
+            do_notify(base + data.content[0].title, options);
+        } else {
+            do_notify(base + data.content.length + " new items", options);
+        }
     }
 }
 
@@ -625,6 +657,7 @@ function reload_feed(node) {
 
 
 function resettoken() {
+    lastquery = null;
     lasttokenrequest = null;
     currenttoken = null;
 }
@@ -1239,6 +1272,18 @@ function isScrolledIntoView(elem)
     }
 
     return null;
+}
+
+
+function select_node_by_url(url) {
+    retree_freeze = true;
+
+    var node = $tree.tree('getNodeById', urls[url].id);
+    $tree.tree('selectNode', node);
+
+    node.element.scrollIntoViewIfNeeded();
+
+    retree_freeze = false;
 }
 
 

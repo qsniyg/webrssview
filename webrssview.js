@@ -597,6 +597,11 @@ function reload_feed_promise(url, ws, resolve, reject) {
             }));
 
             if (inserts.length > 0) {
+                /*console.log("Insert");
+                console.log({
+                        url: url,
+                        content: inserts[0].guid
+                });*/
                 wss.broadcast(JSON.stringify({
                     name: "newcontent",
                     data: {
