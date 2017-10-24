@@ -153,6 +153,53 @@ function feed_url_exists(url) {
 }
 
 
+function get_notify_permission() {
+    if (!("Notification" in window))
+        return;
+
+    if (Notification.permission !== "denied" &&
+        Notification.permission !== "granted") {
+        Notification.requestPermission(function () {});
+    }
+}
+
+
+function do_notify(x) {
+    console.log("Notification: " + x);
+    if (!("Notification" in window)) {
+        return;
+    } else if (Notification.permission === "granted") {
+        new Notification(x);
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission(function (permission) {
+            if (permission === "granted") {
+                new Notification(x);
+            }
+        });
+    }
+}
+
+
+function notify_new_content(data) {
+    if (data.content.length === 0) {
+        // should never happen
+        return;
+    }
+
+    var feed = urls[data.url];
+
+    /*console.log(feed);
+    console.log(data.content);*/
+    if (get_setting(feed, "special")) {
+        //console.log("special");
+        if (data.content.length === 1)
+            do_notify("[" + feed.name + "] " + data.content[0].title);
+        else
+            do_notify("[" + feed.name + "] " + data.content.length + " new items");
+    }
+}
+
+
 function open_contextmenu(x, y, items) {
     $contextmenu.html("");
 
@@ -1414,6 +1461,10 @@ $(function() {
     $contextmenu = $("#contextmenu .dropdown-menu");
     bind_evts();
 
+    $("body").one('mousemove', function(e) {
+        get_notify_permission();
+    });
+
     ws = new WebSocket("ws://" + window.location.host);
 
     ws.onopen = function(e) {
@@ -1450,6 +1501,11 @@ $(function() {
         } else if (parsed.name === "reload") {
             reloading[parsed.data.url] = parsed.data.value;
             retree();
+        } else if (parsed.name === "newcontent") {
+            notify_new_content(parsed.data);
+            /*for (var i = 0; i < parsed.data.length; i++) {
+                console.log(parsed.data[i]);
+            }*/
         }
     };
 });

@@ -328,7 +328,7 @@ function send_feed_contents(feed, ws, limit, token) {
 
         query.updated_at = {
             $lte: token.updated_at
-        }
+        };
     }
 
     db_content.find(query, {sort: {updated_at: -1}, limit: limit}).then((content) => {
@@ -357,7 +357,7 @@ function send_feed_contents(feed, ws, limit, token) {
                             }).then((new_content) => {
                 content.push.apply(content, new_content);
 
-                if (content.length <= 0 || content.length < limit) {
+                if (content.length <= 0) {
                     send_contents(content, oldtoken, null, ws);
                 } else {
                     send_contents(content, oldtoken, {
@@ -366,7 +366,9 @@ function send_feed_contents(feed, ws, limit, token) {
                 }
             });
         } else {
-            send_contents(content, oldtoken, null, ws);
+            send_contents(content, oldtoken, {
+                unread: false
+            }, ws);
         }
     });
 }
@@ -404,6 +406,7 @@ function send_contents(content, oldtoken, token, ws) {
     if (token && content.length > 0) {
         token.updated_at = content[content.length - 1].updated_at;
         token.id = content[content.length - 1]._id;
+        token.unread = content[content.length - 1].unread;
     }
 
     for (var i = 0; i < content.length; i++) {
@@ -592,6 +595,16 @@ function reload_feed_promise(url, ws, resolve, reject) {
                     value: false
                 }
             }));
+
+            if (inserts.length > 0) {
+                wss.broadcast(JSON.stringify({
+                    name: "newcontent",
+                    data: {
+                        url: url,
+                        content: inserts
+                    }
+                }));
+            }
 
             url_feeds.forEach((feed) => {
                 if (feed.unread !== unreads) {
