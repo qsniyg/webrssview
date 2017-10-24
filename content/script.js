@@ -213,7 +213,7 @@ function notify_new_content(data) {
 
     /*console.log(feed);
     console.log(data.content);*/
-    if (get_setting(feed, "special") || true) {
+    if (get_setting(feed, "special")) {
         //console.log("special");
         var base = feed.name + ": ";
         var options = {
