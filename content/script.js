@@ -608,7 +608,9 @@ function save_search_modal() {
         return;
 
     resettoken();
-    get_content(search_modal_info, $search_modal_query.val());
+    get_content(search_modal_info, {
+        search: $search_modal_query.val()
+    });
 
     $search_modal.modal("hide");
 }
@@ -668,7 +670,10 @@ function get_content(node, search) {
     var token = null;
 
     if (search) {
-        query.regex = search;
+        if (search.regex)
+            query.regex = search.regex;
+        else
+            query.search = search.search;
     }
 
     if (node) {

@@ -316,6 +316,10 @@ function send_feed_contents(feed, ws, limit, token) {
             $regex: regex,
             $options: "i"
         };
+    } else if (feed.search) {
+        basequery.$text = {
+            $search: feed.search
+        };
     }
 
     var query = JSON.parse(JSON.stringify(basequery));
@@ -873,7 +877,13 @@ db_feeds.count({}).then((count) => {
 });
 
 
-db_content.ensureIndex({"guid": 1, "url": 1, "updated_at": 1, "unread": 1});
+db_content.ensureIndex({
+    "updated_at": 1,
+    "unread": 1
+});
+db_content.ensureIndex({ url: 1 });
+db_content.ensureIndex({ guid: 1 });
+db_content.ensureIndex({ title: "text", content: "text" });
 
 
 function setting_defined(setting) {
@@ -1111,6 +1121,10 @@ wss.on('connection', function (ws) {
 
                 if (parsed.data.regex) {
                     feed.regex = parsed.data.regex;
+                }
+
+                if (parsed.data.search) {
+                    feed.search = parsed.data.search;
                 }
 
                 var token = parsed.data.token || null;
