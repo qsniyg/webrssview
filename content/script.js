@@ -164,14 +164,19 @@ function get_notify_permission() {
 }
 
 
+function html_to_text(html) {
+    var div = document.createElement("div");
+    div.innerHTML = html;
+    return div.innerText;
+}
+
+
 function do_notify(x, options) {
     function real(x, options) {
         var secondarg = {};
         if (options) {
             if (options.body) {
-                var div = document.createElement("div");
-                div.innerHTML = options.body;
-                secondarg.body = div.innerText;
+                secondarg.body = options.body;
             }
         }
 
@@ -203,6 +208,11 @@ function do_notify(x, options) {
 }
 
 
+function normalize_whitespace(text) {
+    return text.replace(/\s+/, ' ');
+}
+
+
 function notify_new_content(data) {
     if (data.content.length === 0) {
         // should never happen
@@ -223,8 +233,19 @@ function notify_new_content(data) {
             _data: feed
         };
         if (data.content.length === 1) {
-            options.body = data.content[0].content;
-            do_notify(base + data.content[0].title, options);
+            options.body = html_to_text(data.content[0].content);
+            var title = base;
+
+            var normtitle = normalize_whitespace(data.content[0].title);
+            var normbody = normalize_whitespace(options.body);
+            if (normtitle.substr(0, 100) !==
+                normbody.substr(0, 100)) {
+                title += data.content[0].title;
+            } else {
+                title += "1 new item";
+            }
+
+            do_notify(title, options);
         } else {
             do_notify(base + data.content.length + " new items", options);
         }
@@ -1039,6 +1060,10 @@ function treeme_update_unread(node, notfirst) {
             var node_feed = get_feed_from_node(node);
 
             var unreadels = child.getElementsByClassName("unread-label");
+            if (unreadels.length > 1) {
+                console.log("Large unreadels.length");
+                console.log(unreadels);
+            }
 
             if (node_feed.children) {
                 child.classList.add("folder");
