@@ -23,6 +23,7 @@ var currentnode;
 
 var urls = {};
 var ids = {};
+var feed_ids = {};
 var reloading = {};
 
 var unreads = [];
@@ -136,7 +137,8 @@ function get_feed_by_hierarchy(hierarchy) {
 }
 
 function get_feed_from_node(node) {
-    return get_feed_by_hierarchy(get_node_hierarchy(node));
+    return feed_ids[node.id];
+    //return get_feed_by_hierarchy(get_node_hierarchy(node));
 }
 
 
@@ -238,8 +240,7 @@ function notify_new_content(data) {
 
             var normtitle = normalize_whitespace(data.content[0].title);
             var normbody = normalize_whitespace(options.body);
-            if (normtitle.substr(0, 100) !==
-                normbody.substr(0, 100)) {
+            if (normbody.indexOf(normtitle) !== 0) {
                 title += data.content[0].title;
             } else {
                 title += "1 new item";
@@ -338,7 +339,7 @@ function show_edit_modal(node) {
     reset_modal($edit_modal);
 
     edit_modal_info = node;
-
+    var feed = get_feed_from_node(node);
 
     if (node_is_folder(node)) {
         $edit_modal_name.val("");
@@ -348,10 +349,10 @@ function show_edit_modal(node) {
         $edit_modal_special.val("");
     } else {
         $edit_modal_name.val(node.name);
-        $edit_modal_url.val(node._data.url);
-        $edit_modal_reload.val(node._data.reload_mins);
-        $edit_modal_thread.val(node._data.thread);
-        $edit_modal_special.val(node._data.special);
+        $edit_modal_url.val(feed.url);
+        $edit_modal_reload.val(feed.reload_mins);
+        $edit_modal_thread.val(feed.thread);
+        $edit_modal_special.val(feed.special);
     }
 
     $edit_modal.modal("show");
@@ -447,15 +448,17 @@ function show_folder_modal(node, add) {
         add: add
     };
 
+    var feed = get_feed_from_node(node);
+
     $folder_modal_name.parent().show();
     $folder_modal_reload.parent().show();
 
     if (add) {
         $folder_modal_title.html("Add Folder");
     } else {
-        $folder_modal_reload.val(folder_modal_info.node._data.reload_mins);
-        $folder_modal_thread.val(folder_modal_info.node._data.thread);
-        $folder_modal_special.val(folder_modal_info.node._data.special);
+        $folder_modal_reload.val(feed.reload_mins);
+        $folder_modal_thread.val(feed.thread);
+        $folder_modal_special.val(feed.special);
 
         if (node_is_root(node)) {
             $folder_modal_title.html("Settings");
@@ -1496,6 +1499,7 @@ function parse_feeds(feeds, hierarchy) {
                 thisfeed.name = feeds[i].name;
             } else if (x === "id") {
                 thisfeed.id = feeds[i].id;
+                feed_ids[feeds[i].id] = feeds[i];
             }
 
             thisfeed._data[x] = feeds[i][x];
@@ -1571,6 +1575,8 @@ $(function() {
                 return;
 
             urls = {};
+            ids = {};
+            feed_ids = {};
             feeds = parsed.data;
             update_parents(feeds[0]);
             retree();
