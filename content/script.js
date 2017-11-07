@@ -173,12 +173,35 @@ function html_to_text(html) {
 }
 
 
+function get_main_image_html(html) {
+    var div = document.createElement("div");
+    div.innerHTML = html;
+
+    var imgs = div.querySelectorAll("img");
+    for (var i = 0; i < imgs.length; i++) {
+        if (!imgs[i].src)
+            continue;
+
+        if (!imgs[i].getAttribute("width") &&
+            !imgs[i].getAttribute("height")) {
+            return imgs[i].src;
+        }
+    }
+
+    return null;
+}
+
+
 function do_notify(x, options) {
     function real(x, options) {
         var secondarg = {};
         if (options) {
             if (options.body) {
                 secondarg.body = options.body;
+            }
+
+            if (options.image) {
+                secondarg.icon = options.image;
             }
         }
 
@@ -211,7 +234,7 @@ function do_notify(x, options) {
 
 
 function normalize_whitespace(text) {
-    return text.replace(/\s+/, ' ');
+    return text.replace(/\s+/g, ' ');
 }
 
 
@@ -236,11 +259,14 @@ function notify_new_content(data) {
         };
         if (data.content.length === 1) {
             options.body = html_to_text(data.content[0].content);
+            options.image = get_main_image_html(data.content[0].content);
             var title = base;
 
             var normtitle = normalize_whitespace(data.content[0].title);
             var normbody = normalize_whitespace(options.body);
             if (normbody.indexOf(normtitle) !== 0) {
+                console.log(normtitle);
+                console.log(normbody);
                 title += data.content[0].title;
             } else {
                 title += "1 new item";
@@ -1312,6 +1338,7 @@ function select_node_by_url(url) {
     retree_freeze = true;
 
     var node = $tree.tree('getNodeById', urls[url].id);
+    $tree.tree('selectNode', null);
     $tree.tree('selectNode', node);
 
     node.element.scrollIntoViewIfNeeded();
