@@ -383,7 +383,7 @@ var allowedtags = [ 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol',
                     'img', 'iframe' ];
 var allowedattributes = {
     a: [ 'href', 'target' ],
-    img: [ 'src' ],
+    img: [ 'src', 'alt' ],
     iframe: [ 'src' ],
     '*': [ 'style', 'title', 'height', 'width', 'border' ]
 };
@@ -437,7 +437,21 @@ function send_contents(content, oldtoken, token, ws) {
     }
 }
 
+function fuzzify_text(text) {
+    var newtext;
+
+    try {
+        newtext = cheerio.load(text).text();
+    } catch (e) {
+        newtext = text;
+    }
+
+    return newtext;
+}
+
 function fuzzy_compare(contents1, contents2) {
+    return fuzzify_text(contents1) === fuzzify_text(contents2);
+
     try {
         var c1 = cheerio.load(contents1).text();
     } catch (e) {
@@ -702,8 +716,18 @@ function reload_feed_promise(url, ws, resolve, reject) {
                     }
 
                     if (true) {
-                        console.log("Old content: " + db_item.content);
-                        console.log("New content: " + content.content);
+                        if (content.title !== db_item.title) {
+                            console.log("Old title: " + db_item.title);
+                            console.log("New title: " + content.title);
+                        }
+
+                        if (!fuzzy_compare(content.content, db_item.content)) {
+                            console.log("Old content: " + fuzzify_text(db_item.content));
+                            console.log("New content: " + fuzzify_text(content.content));
+                        }
+
+                        /*console.log("Old content: " + db_item.content);
+                        console.log("New content: " + content.content);*/
                     }
 
                     if (need_update) {

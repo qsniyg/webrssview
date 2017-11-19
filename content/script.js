@@ -265,8 +265,8 @@ function notify_new_content(data) {
             var normtitle = normalize_whitespace(data.content[0].title);
             var normbody = normalize_whitespace(options.body);
             if (normbody.indexOf(normtitle) !== 0) {
-                console.log(normtitle);
-                console.log(normbody);
+                /*console.log(normtitle);
+                console.log(normbody);*/
                 title += data.content[0].title;
             } else {
                 title += "1 new item";
@@ -866,6 +866,10 @@ function bind_evts() {
         if (e.keyCode == 13) {
             $(this).closest(".modal-content").find(".modal-footer .btn-primary").click();
         }
+    });
+
+    $(".modal").on('hidden.bs.modal', function() {
+        feed_freeze = false;
     });
 
     $tree.bind("mousedown", function(e) {
