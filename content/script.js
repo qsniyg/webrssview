@@ -481,6 +481,10 @@ function show_folder_modal(node, add) {
 
     if (add) {
         $folder_modal_title.html("Add Folder");
+
+        $folder_modal_reload.val("");
+        $folder_modal_thread.val("");
+        $folder_modal_special.val("");
     } else {
         $folder_modal_reload.val(feed.reload_mins);
         $folder_modal_thread.val(feed.thread);
