@@ -446,7 +446,7 @@ function trim_text(text) {
 }
 
 function trim_compare(text1, text2) {
-    return trim_text(contents1) === trim_text(contents2);
+    return trim_text(text1) === trim_text(text2);
 }
 
 function fuzzify_text(text) {
