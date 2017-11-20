@@ -67,7 +67,8 @@ function update_feeds(cb) {
 }
 
 function update_content(data, cb) {
-    db_content.update(data._id, data).then(() => {
+    // FIXME: for now, only update unread
+    db_content.update(data._id, { "$set": { "unread": data.unread } }).then(() => {
         var our_feeds = get_feeds_by_url(data.url);
         our_feeds.forEach((feed) => {
             feed.need_update = true;
