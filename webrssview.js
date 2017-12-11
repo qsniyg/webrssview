@@ -32,6 +32,9 @@ var reload_running = {};
 
 var updating_feeds = false;
 
+var http_timeout =  500 * 1000;
+var feed_timeout = 1000 * 1000;
+
 
 Array.prototype.move = function(from, to) {
     if (from === to) return;
@@ -484,7 +487,7 @@ function fuzzy_compare(contents1, contents2) {
 function reload_feed_promise(url, ws, resolve, reject) {
     console.log("Reloading " + url);
 
-    reload_running[url] = true;
+    reload_running[url] = Date.now();
 
     wss.broadcast(JSON.stringify({
         name: "reload",
@@ -498,7 +501,7 @@ function reload_feed_promise(url, ws, resolve, reject) {
 
     var req = request({
         uri: url,
-        timeout: 500 * 1000
+        timeout: http_timeout
     });
     var feedparser = new FeedParser({
         feedurl: url
@@ -1010,8 +1013,20 @@ function add_timer(feed) {
     }
 }
 
+function is_reload_running(feed) {
+    if (!reload_running[feed.url]) {
+        return false;
+    }
+
+    if ((Date.now() - reload_running[feed.url]) > feed_timeout) {
+        return false;
+    }
+
+    return true;
+}
+
 function schedule_timer(feed) {
-    if (reload_running[feed.url]) {
+    if (is_reload_running(feed)) {
         console.log("Already running on " + feed.url + " (you shouldn't see this!)");
         return;
     }
@@ -1043,7 +1058,7 @@ function set_timers(feed) {
             timers[feed.url] = {};
         }
 
-        if (timers[feed.url].timer === undefined && !reload_running[feed.url]) {
+        if (timers[feed.url].timer === undefined && !is_reload_running(feed)) {
             schedule_timer(feed);
             total_timers++;
         }
