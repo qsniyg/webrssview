@@ -21,6 +21,8 @@ var uuid = require("node-uuid");
 var cheerio = require("cheerio");
 var sanitizeHtml = require("sanitize-html");
 
+var async = require("async");
+
 var feeds;
 var feed_parents = {};
 var timers = {};
@@ -837,6 +839,32 @@ function reload_feed_schedule(override) {
     }
 }
 
+function process_queue(item, cb) {
+    if (item === undefined) {
+        console.log("Empty item to process?");
+    }
+
+    delete reload_feed_list[item.thread].urls[item.url];
+
+    //console.dir(item);
+    reload_feed_real(item.url, item.ws).then(
+        () => {
+            item.resolve.forEach((resolve) => {
+                resolve();
+            });
+
+            cb();
+        },
+        () => {
+            item.reject.forEach((reject) => {
+                reject();
+            });
+
+            cb();
+        }
+    );
+}
+
 function reload_feed(url, ws, options) {
     if (!options) {
         options = {};
@@ -851,12 +879,41 @@ function reload_feed(url, ws, options) {
     }
 
     return new Promise((resolve, reject) => {
+        if (!(options.thread in reload_feed_list)) {
+            reload_feed_list[options.thread] = {
+                queue: async.queue(process_queue, 1),
+                urls: {}
+            };
+        }
+
         var obj = {
             url: url,
             ws: ws,
             resolve: [resolve],
-            reject: [reject]
+            reject: [reject],
+            thread: options.thread
         };
+
+        if (url in reload_feed_list[options.thread].urls) {
+            reload_feed_list[options.thread].urls[url].resolve.push(resolve);
+            reload_feed_list[options.thread].urls[url].reject.push(reject);
+        } else {
+            reload_feed_list[options.thread].urls[url] = obj;
+
+            if (options.priority) {
+                reload_feed_list[options.thread].queue.unshift(obj);
+            } else {
+                reload_feed_list[options.thread].queue.push(obj);
+            }
+            /*if (options.priority) {
+                reload_feed_list[options.thread].data.unshift(obj);
+            } else {
+                reload_feed_list[options.thread].data.push(obj);
+            }*/
+        }
+
+        //reload_feed_list[options.thread].queue.push(obj);
+        return;
 
         if (!(options.thread in reload_feed_list)) {
             reload_feed_list[options.thread] = {
