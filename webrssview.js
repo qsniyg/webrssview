@@ -791,53 +791,49 @@ function reload_feed_schedule(override) {
     }*/
 
     for (var thread in reload_feed_list) {
-        if (reload_feed_list[thread].running && override !== true && override !== thread) {
-            continue;
-        }
-
-        reload_feed_list[thread].running = true;
-
-        if (reload_feed_list[thread].data.length <= 0) {
-            reload_feed_list[thread].running = false;
-            continue;
-        }
-
-        var our_item = reload_feed_list[thread].data[0];
-
-        var common;
-        (function() {
-            var thread_copy = thread;
-            var data = reload_feed_list[thread_copy].data;
-            var our_item_copy = our_item;
-
-            common = function() {
-                data.splice(data.indexOf(our_item_copy), 1);
-                reload_feed_schedule(thread_copy);
+        // create new scope in order for 'thread' not to be overwritten
+        (function(thread) {
+            if (reload_feed_list[thread].running && override !== true && override !== thread) {
+                return;
             }
-        })();
 
-        delete reload_feed_list[thread].urls[our_item.url];
+            reload_feed_list[thread].running = true;
 
-        if (our_item === undefined) {
-            console.log(reload_feed_list[thread]);
-        }
-
-        reload_feed_real(our_item.url, our_item.ws).then(
-            () => {
-                common();
-
-                our_item.resolve.forEach((resolve) => {
-                    resolve();
-                });
-            },
-            () => {
-                common();
-
-                our_item.reject.forEach((reject) => {
-                    reject();
-                });
+            if (reload_feed_list[thread].data.length <= 0) {
+                reload_feed_list[thread].running = false;
+                return;
             }
-        );
+
+            var our_item = reload_feed_list[thread].data[0];
+
+            var common = function() {
+                reload_feed_list[thread].data.splice(reload_feed_list[thread].data.indexOf(our_item), 1);
+                reload_feed_schedule(thread);
+            };
+
+            delete reload_feed_list[thread].urls[our_item.url];
+
+            if (our_item === undefined) {
+                console.log(reload_feed_list[thread]);
+            }
+
+            reload_feed_real(our_item.url, our_item.ws).then(
+                () => {
+                    common();
+
+                    our_item.resolve.forEach((resolve) => {
+                        resolve();
+                    });
+                },
+                () => {
+                    common();
+
+                    our_item.reject.forEach((reject) => {
+                        reject();
+                    });
+                }
+            );
+        })(thread);
     }
 }
 
@@ -887,6 +883,9 @@ function reload_feed(url, ws, options) {
     });
 }
 
+function nullfunc() {
+}
+
 function reload_feeds(urls, ws, i, options) {
     if (!options) {
         options = {};
@@ -918,13 +917,13 @@ db_feeds.count({}).then((count) => {
 });
 
 
-db_content.ensureIndex({
+db_content.createIndex({
     "updated_at": 1,
     "unread": 1
 });
-db_content.ensureIndex({ url: 1 });
-db_content.ensureIndex({ guid: 1 });
-db_content.ensureIndex({ title: "text", content: "text" });
+db_content.createIndex({ url: 1 });
+db_content.createIndex({ guid: 1 });
+db_content.createIndex({ title: "text", content: "text" });
 
 
 function setting_defined(setting) {
@@ -997,7 +996,7 @@ function add_timer(feed) {
             timers[feed.url].timer = undefined;
             reload_feed(feed.url, undefined, {
                 thread: get_setting(feed, "thread", "default")
-            });
+            }).then(nullfunc, nullfunc);
         }, 1);
 
         /*setTimeout(function() {
@@ -1008,7 +1007,7 @@ function add_timer(feed) {
             timers[feed.url].timer = undefined;
             reload_feed(feed.url, undefined, {
                 thread: get_setting(feed, "thread", "default")
-            });
+            }).then(nullfunc, nullfunc);
         }, millis);
     }
 }
@@ -1036,12 +1035,12 @@ function schedule_timer(feed) {
     add_timer(feed);
 }
 
-function set_timers(feed) {
+function set_timers(feed, print) {
     var total_timers = 0;
 
     if (feed.children) {
         feed.children.forEach((child) => {
-            total_timers += set_timers(child);
+            total_timers += set_timers(child, print);
         });
     } else {
         var now = Date.now();
@@ -1059,6 +1058,9 @@ function set_timers(feed) {
         }
 
         if (timers[feed.url].timer === undefined && !is_reload_running(feed)) {
+            if (print) {
+                console.log(feed.url);
+            }
             schedule_timer(feed);
             total_timers++;
         }
@@ -1072,9 +1074,9 @@ get_feeds((feeds) => {
     var timers = set_timers(feeds[0]);
     setInterval(() => {
         get_feeds((feeds) => {
-            var timers = set_timers(feeds[0]);
-            /*if (timers > 0)
-                console.log("Added " + timers + " timer(s)");*/
+            var timers = set_timers(feeds[0], false);
+            if (timers > 0)
+                console.log("Added " + timers + " timer(s)");
         }, true);
     }, 60*1000);
     console.log("Done initialization (" + timers + " timers)");
