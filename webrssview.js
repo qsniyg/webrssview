@@ -471,14 +471,16 @@ function fuzzify_text(text) {
 function fuzzy_compare(contents1, contents2) {
     return fuzzify_text(contents1) === fuzzify_text(contents2);
 
+    var c1, c2;
+
     try {
-        var c1 = cheerio.load(contents1).text();
+        c1 = cheerio.load(contents1).text();
     } catch (e) {
         c1 = contents1;
     }
 
     try {
-        var c2 = cheerio.load(contents2).text();
+        c2 = cheerio.load(contents2).text();
     } catch (e) {
         c2 = contents2;
     }
