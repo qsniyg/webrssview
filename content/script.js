@@ -29,6 +29,8 @@ var reloading = {};
 var unreads = [];
 var unread_count = {};
 
+var notifications = {};
+
 var currenttoken = null;
 var lasttokenrequest = null;
 var lastquery = null;
@@ -216,6 +218,28 @@ function do_notify(x, options) {
                 };
             }
         }
+
+        if (options.feed_url) {
+            var newobj = {
+                options: options,
+                obj: obj
+            };
+
+            if (!notifications[options.feed_url]) {
+                notifications[options.feed_url] = [];
+            }
+
+            notifications[options.feed_url].push(newobj);
+
+            obj.addEventListener("close", function(event) {
+                if (notifications[options.feed_url]) {
+                    var index = notifications[options.feed_url].indexOf(newobj);
+                    if (index >= 0) {
+                        notifications[options.feed_url].splice(index, 1);
+                    }
+                }
+            });
+        }
     }
 
     console.log("Notification: " + x);
@@ -255,6 +279,8 @@ function notify_new_content(data) {
             click: function(event, data) {
                 select_node_by_url(data.url);
             },
+            feed_url: data.url,
+            content: data.content,
             _data: feed
         };
         if (data.content.length === 1) {
@@ -732,6 +758,11 @@ function get_content(node, search) {
 
     if (node) {
         query.feed = node.id;
+        if (notifications[node._data.url]) {
+            notifications[node._data.url].forEach(function(x) {
+                x.obj.close();
+            });
+        }
     } else {
         //query.feed = currentnode.id;
         query = lastquery;
@@ -758,6 +789,23 @@ function get_content(node, search) {
 function read_item(item) {
     if (!item.our_content.unread) {
         return;
+    }
+
+    if (notifications[item.our_content.url]) {
+        var done = false;
+        for (var i = 0; i < notifications[item.our_content.url].length; i++) {
+            var x = notifications[item.our_content.url][i];
+            for (var j = 0; j < x.options.content.length; j++) {
+                var y = x.options.content[j];
+                if (y.guid === item.our_content.guid) {
+                    x.obj.close();
+                    done = true;
+                    break;
+                }
+            }
+            if (done)
+                break;
+        }
     }
 
     item.our_content.unread = false;
