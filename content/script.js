@@ -19,7 +19,7 @@ var feeds;
 var feed_parents = {};
 var feed_freeze = false;
 var retree_freeze = false;
-var currentnode;
+var currentnode = null;
 
 var urls = {};
 var ids = {};
@@ -669,6 +669,7 @@ function show_info_modal(node) {
 function show_search_modal(node) {
     var $search_modal = $("#search_modal");
     var $search_modal_query = $("#search_modal_query");
+    //var $search_modal_sort = $("input[name='search_modal_sort']");
 
     reset_modal($search_modal);
 
@@ -683,13 +684,16 @@ function show_search_modal(node) {
 function save_search_modal() {
     var $search_modal = $("#search_modal");
     var $search_modal_query = $("#search_modal_query");
+    var search_modal_sort = $("input[name='search_modal_sort']:checked").val();
 
     if (!validate_modal($search_modal))
         return;
 
     resettoken();
+    currentnode = null;
     get_content(search_modal_info, {
-        search: $search_modal_query.val()
+        search: $search_modal_query.val(),
+        sort: search_modal_sort
     });
 
     $search_modal.modal("hide");
@@ -754,6 +758,9 @@ function get_content(node, search) {
             query.regex = search.regex;
         else
             query.search = search.search;
+
+        if (search.sort)
+            query.sort = search.sort;
     }
 
     if (node) {
@@ -1435,7 +1442,7 @@ function rendercontent(content, append) {
     if (!append)
         $content.html("");
 
-    if (currentnode._data.error) {
+    if (currentnode && currentnode._data.error) {
         var errorel = document.getElementById("content-error");
 
         if (!errorel) {

@@ -131,3 +131,7 @@ html, body, #main {
     background-image: url('/content/img/grips/horizontal.png');
     cursor: ns-resize;
 }
+
+ul.bulletless {
+    list-style-type: none;
+}

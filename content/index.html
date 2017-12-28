@@ -153,6 +153,14 @@
                   <label for="search_modal_query">Query</label>
                   <input type="text" class="form-control" id="search_modal_query" data-required="true" autocomplete="off" autofocus />
                 </div>
+                <div class="form-group">
+                  <label for="search_modal_sort">Sort by</label>
+
+                  <ul class="bulletless">
+                    <li><input type="radio" name="search_modal_sort" value="date" /> Date</li>
+                    <li><input type="radio" name="search_modal_sort" value="relevance" checked /> Relevance</li>
+                  </ul>
+                </div>
               </form>
             </div>
             <div class="modal-footer">
