@@ -4,6 +4,11 @@
   "description": "Web-based feed reader",
   "author": "qsniyg",
   "main": "webrssview.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qsniyg/webrssview.git"
+  },
   "dependencies": {
     "async": "^2.6.0",
     "cheerio": "^0.22.0",
