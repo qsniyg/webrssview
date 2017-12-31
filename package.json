@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Web-based feed reader",
   "author": "qsniyg",
+  "main": "webrssview.js",
   "dependencies": {
     "async": "^2.6.0",
     "cheerio": "^0.22.0",
