@@ -1,7 +1,8 @@
 {
   "name": "webrssview",
   "version": "0.1.0",
-  "description": "Web RSS Viewer",
+  "description": "Web-based feed reader",
+  "author": "qsniyg",
   "dependencies": {
     "async": "^2.6.0",
     "cheerio": "^0.22.0",

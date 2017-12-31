@@ -1,6 +1,6 @@
 # WebRSSview
 
-Web-based RSS/Atom feed viewer.
+Web-based feed reader.
 
 ## Requirements
 
