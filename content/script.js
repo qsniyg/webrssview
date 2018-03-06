@@ -427,7 +427,7 @@ function save_edit_modal() {
     var our_node = get_feed_from_node(edit_modal_info);
     if (!our_node) {
         console.log("can't find info for node");
-        console.log(node);
+        console.log(our_node);
         feed_freeze = false;
         return;
     }
@@ -554,7 +554,7 @@ function save_folder_modal() {
     var our_node = get_feed_from_node(folder_modal_info.node);
     if (!our_node) {
         console.log("can't find info for node");
-        console.log(node);
+        console.log(our_node);
         feed_freeze = false;
         return;
     }
@@ -606,7 +606,7 @@ function show_delete_modal(node) {
     delete_modal_info = {
         node: get_feed_from_node(node),
         parent: get_feed_from_node(node.parent)
-    }
+    };
 
     if (!delete_modal_info.node || !delete_modal_info.parent) {
         console.log("can't find info for node");
@@ -974,7 +974,7 @@ function bind_evts() {
     });
 
     $tree.bind("tree.contextmenu", function(e) {
-        var items = []
+        var items = [];
         if (node_is_folder(e.node)) {
             items = [
                 {
@@ -1503,6 +1503,7 @@ function rendercontent(content, append) {
 
         var itembodyel = document.createElement("div");
         itembodyel.classList.add("item-body");
+        itembodyel.classList.add("clearfix");
         itembodyel.innerHTML = content[i].content;
 
         itemel.appendChild(itemheadingel);
@@ -1553,7 +1554,7 @@ function rendercontent(content, append) {
                 }
 
                 open_contextmenu(e.pageX, e.pageY, items);
-            }
+            };
         })();
 
         $content[0].appendChild(itemel);
