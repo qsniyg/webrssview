@@ -1555,6 +1555,11 @@ function rendercontent(content, append) {
 
                 open_contextmenu(e.pageX, e.pageY, items);
             };
+
+            itemtitleel.oncontextmenu = function(e) {
+                e.stopImmediatePropagation();
+                return true;
+            };
         })();
 
         $content[0].appendChild(itemel);
