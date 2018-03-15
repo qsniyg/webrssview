@@ -9,6 +9,7 @@ var $tree;
 var $content;
 var $overlay;
 var $contextmenu;
+var $treesearch;
 var ws;
 var ws_open = false;
 var edit_modal_info;
@@ -1119,6 +1120,10 @@ function bind_evts() {
         }));
         e.preventDefault();
     });
+
+    /*$treesearch.bind("input", function(e) {
+        var chars = $treesearch.val();
+    });*/
 }
 
 function update_page_title() {
@@ -1643,6 +1648,7 @@ $(function() {
     $tree = $("#tree");
     $overlay = $("#overlay");
     $contextmenu = $("#contextmenu .dropdown-menu");
+    $treesearch = $("#tree-search");
     bind_evts();
 
     $("body").one('mousemove', function(e) {

@@ -2,7 +2,11 @@ html, body, #main {
     height: 100%;
 }
 
-#content, #tree {
+* {
+    outline-width: 0;
+}
+
+#content, #tree-top {
     height: 100%;
     width: 100%;
     max-height: 100%;
@@ -13,6 +17,20 @@ html, body, #main {
 
 #tree {
     white-space: nowrap;
+}
+
+#tree-search-container {
+    padding: .5em;
+    padding-bottom: 0;
+}
+
+#tree-search {
+    height: 2em;
+}
+
+hr.thin {
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 #content img {
