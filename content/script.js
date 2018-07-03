@@ -1155,6 +1155,8 @@ function treeme_update_unread(node, notfirst) {
                 continue;
 
             var node_feed = get_feed_from_node(node);
+            if (!node_feed)
+                node_feed = {};
 
             var unreadels = child.getElementsByClassName("unread-label");
             if (unreadels.length > 1) {
