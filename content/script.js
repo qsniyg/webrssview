@@ -1498,6 +1498,10 @@ function rendercontent(content, append) {
             itemdateel.title += " (cr: "+ format_timestamp(content[i].created_at, true) + ")";
         }
 
+        if ((content[i].added_at - content[i].created_at) > 40*1000) {
+            itemdateel.innerHTML += " (added: " + format_timestamp(content[i].added_at) + ")";
+        }
+
         var itemfeedel = document.createElement("div");
         itemfeedel.classList.add("item-feedname");
         itemfeedel.classList.add("label");
@@ -1559,6 +1563,13 @@ function rendercontent(content, append) {
                         }
                     });
                 }
+
+                items.push({
+                    name: "Log to console",
+                    onclick: function() {
+                        console.log(our_itemel.our_content);
+                    }
+                });
 
                 open_contextmenu(e.pageX, e.pageY, items);
             };
