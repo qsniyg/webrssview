@@ -453,7 +453,8 @@ function save_edit_modal() {
             url: $edit_modal_url.val(),
             reload_mins: reload_val,
             thread: $edit_modal_thread.val(),
-            special: $edit_modal_special.val()
+            special: $edit_modal_special.val(),
+            added_at: Date.now()
         });
         our_node = our_node.children[our_node.children.length - 1];
     } else {
@@ -653,7 +654,9 @@ function show_info_modal(node) {
 
     if (node._data.description) {
         $("#info_modal_desc").parent().show();
-        $("#info_modal_desc").html(node._data.description);
+        $("#info_modal_desc").text(node._data.description);
+        var el = $("#info_modal_desc")[0];
+        el.innerHTML = el.innerHTML.replace(/\n\r?/g, '<br />');
     } else {
         $("#info_modal_desc").parent().hide();
     }
@@ -1418,6 +1421,9 @@ function select_node_by_url(url) {
 
 
 function format_timestamp(timestamp, absolute) {
+    if (!timestamp)
+        return "n/a";
+
     var timestamp_tz = timestamp - tzoffset;
     var date = new Date(timestamp_tz);
     var iso = date.toISOString();
