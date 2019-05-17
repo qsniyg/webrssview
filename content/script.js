@@ -665,6 +665,7 @@ function show_info_modal(node) {
     $("#info_modal_link").attr("href", node._data.link);
 
     $("#info_modal_updated").html(format_timestamp(node._data.last_updated));
+    $("#info_modal_added_at").html(format_timestamp(node._data.added_at));
 
     $("#info_modal").modal("show");
 }
