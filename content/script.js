@@ -343,7 +343,7 @@ function open_contextmenu(x, y, items) {
 
     var height = $contextmenu.height();
 
-    if (y + height > $(window).height()) {
+    if ((y + height + 14) > $(window).height()) {
         $contextmenu.css({
             left: x,
             top: y - height
