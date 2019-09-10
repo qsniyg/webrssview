@@ -16,7 +16,7 @@
     "feedparser": "^1.1.6",
     "monk": "^6.0.5",
     "node-uuid": "^1.4.8",
-    "request": "^2.83.0",
+    "request": "^2.88.0",
     "sanitize-html": "^1.16.1",
     "ws": "^1.1.5"
   }
