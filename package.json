@@ -17,7 +17,7 @@
     "monk": "^7.3.1",
     "node-uuid": "^1.4.8",
     "request": "^2.88.0",
-    "sanitize-html": "^1.16.1",
+    "sanitize-html": "^2.3.2",
     "ws": "^3.3.1"
   }
 }
